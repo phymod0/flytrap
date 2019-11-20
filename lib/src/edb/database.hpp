@@ -9,6 +9,7 @@
  *      - Error status instead of exception throwing on not found
  *      - const functions
  *      - readResult and writeResult to avoid code duplication
+ *      - Privatize FileStream functions
  */
 
 
