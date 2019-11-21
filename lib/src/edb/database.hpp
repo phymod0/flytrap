@@ -10,6 +10,8 @@
  *      - const functions
  *      - readResult and writeResult to avoid code duplication
  *      - Privatize FileStream functions
+ *      - smart pointers to avoid try/catch blocks
+ *      - delete list of results
  */
 
 
@@ -89,11 +91,13 @@ public:
         void erase(const Query<Entry>& query);
 
         friend class iterator {
+                friend class Database;
         private:
                 Database<Entry>& db;
                 uint32_t entryIdx;
                 bool ended;
                 bool isEntryIdxValid(uint32_t entryIdx);
+                void end();
         public:
                 iterator(Database<Entry>& db);
                 iterator& operator++();
@@ -458,6 +462,12 @@ bool Database<Entry>::iterator::isEntryIdxValid(uint32_t entryIdx)
 }
 
 template<typename Entry>
+void Database<Entry>::iterator::end()
+{
+        ended = true;
+}
+
+template<typename Entry>
 typename Database<Entry>::iterator(Database<Entry>& db)
         : db(db), entryIdx(0), ended(false)
 { }
@@ -511,6 +521,20 @@ template<typename Entry>
 bool Database<Entry>::iterator::operator!=(const Database<Entry>::iterator& it)
 {
         return not operator==(it);
+}
+
+template<typename Entry>
+typename Database<Entry>::iterator Database<Entry>::begin()
+{
+        return iterator(*this);
+}
+
+template<typename Entry>
+typename Database<Entry>::iterator Database<Entry>::end()
+{
+        iterator it(*this);
+        it.end();
+        return it;
 }
 
 template<typename Entry>
