@@ -12,6 +12,7 @@
  *      - Query iterators
  *      - Multi-put
  *      - Transformation
+ *      - Function composition instead of lists
  */
 
 
