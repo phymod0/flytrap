@@ -1,5 +1,5 @@
 INCLUDE_DIRS := ../src/ ../
-CFLAGS := -g -Wall -Werror -Wextra -std=gnu11 -fsanitize=address \
+CFLAGS := -g -Wall -Werror -Wextra -std=c++17 -fsanitize=address \
 	-fsanitize=undefined -Winline # -O3 -finline-functions -Winline
 CFLAGS += $(patsubst %,-I%,$(INCLUDE_DIRS))
 
