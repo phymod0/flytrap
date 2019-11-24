@@ -12,7 +12,7 @@
 #define GREEN "\x1B[32m"
 #define BLUE "\x1B[34m"
 #define YELLOW "\x1B[33m"
-#define RESET "\033[01;30m"
+#define RESET "\033[01;37m"
 
 
 typedef struct test_result {
@@ -110,7 +110,7 @@ void test_name(test_result_t* result, const char* name)
 int test_run(const test_t* tests, size_t n_tests, const char* module_name)
 {
 	size_t n_passed = 0;
-	PSTDOUT("\n");
+	PSTDOUT(RESET "\n");
 	print_bar(RESET, module_name);
 	for (size_t i=0; i<n_tests; ++i)
 		if (run_single_test(tests[i]))
