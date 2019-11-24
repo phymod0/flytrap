@@ -12,7 +12,7 @@
 #define GREEN "\x1B[32m"
 #define BLUE "\x1B[34m"
 #define YELLOW "\x1B[33m"
-#define RESET "\033[01;36m"
+#define RESET "\033[01;30m"
 
 
 typedef struct test_result {
@@ -52,7 +52,11 @@ static bool run_single_test(test_t test)
 
 	test_result_t result;
 	for (int i=0; i<N_RUNS_PER_TEST; ++i) {
-		result = (test_result_t){0};
+        result.passed = 0;
+        result.total = 0;
+        memset(result.failed_checknames, 0,
+                sizeof result.failed_checknames);
+        result.n_failed_names = 0;
 		test(&result);
 		if (result.passed != result.total)
 			break;
