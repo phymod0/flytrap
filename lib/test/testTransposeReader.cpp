@@ -50,51 +50,57 @@ public:
 };
 
 
-/*
-void testReader()
-{
-    unsigned char data[8];
-    Transpose::Writer writer = Transpose::Writer(&data[0]);
-    HelloData hd = HelloData(0x12344321, 0xAB, 0xBC, 0xCD, 0xDA);
-    writer << hd;
-    printf("0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", data[0], data[1], data[2], data[3]);
-    printf("0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", data[4], data[5], data[6], data[7]);
-}
-*/
-
-
 TEST_DEFINE(correctPrimitiveReads, result)
 {
     TEST_AUTONAME(result);
 
-    unsigned char data[] = "\x08\x00\x00\x00\x12\x23\x34\x45";
+    unsigned char data[] =
+        "\x08\x00\x00\x00"
+        "\x12\x23\x34\x45"
+        "\x01\x23\x45\x67\x89\xAB\xCD\xEF";
     Transpose::Reader reader = Transpose::Reader(&data[0]);
 
     int32_t n;
     unsigned char a, b, c, d;
-    reader >> n >> a >> b >> c >> d;
+    uint64_t m;
+    reader >> n >> a >> b >> c >> d >> m;
     test_check(result, "Correct integer read", n == 8);
     test_check(result, "Correct characters read",
             a == 0x12 && b == 0x23 && c == 0x34 && d == 0x45);
+    test_check(result, "Correct long integer read", m == 0xEFCDAB8967452301);
 }
 
 
-TEST_DEFINE(correctNonprimitiveReads, result)
+TEST_DEFINE(correctClassReads, result)
 {
     TEST_AUTONAME(result);
 
-    HelloData hd = HelloData(0, 0, 0, 0, 0);
+    unsigned char data[] = "\x12\x23\x34\x45";
+    Transpose::Reader reader = Transpose::Reader(&data[0]);
+
+    GData gd = GData(0, 0, 0, 0);
+    reader >> gd;
+    test_check(result, "Correct class read",
+            gd.a == 0x12 && gd.b == 0x23 && gd.c == 0x34 && gd.d == 0x45);
+}
+
+
+TEST_DEFINE(correctSubclassReads, result)
+{
+    TEST_AUTONAME(result);
     unsigned char data[] = "\x08\x00\x00\x00\x12\x23\x34\x45";
     Transpose::Reader reader = Transpose::Reader(&data[0]);
 
+    HelloData hd = HelloData(0, 0, 0, 0, 0);
     reader >> hd;
-    test_check(result, "Correct class read",
-            hd.g == 8 && hd.gData.a == 0x12 && hd.gData.b == 0x23 &&
+    test_check(result, "Correct subclass read",
+            hd.gData.a == 0x12 && hd.gData.b == 0x23 &&
             hd.gData.c == 0x34 && hd.gData.d == 0x45);
 }
 
 
 TEST_START(
     correctPrimitiveReads,
-    correctNonprimitiveReads,
+    correctClassReads,
+    correctSubclassReads,
 )
