@@ -5,3 +5,7 @@ add_library(flytrap
     src/transpose/writer.cpp
     src/transpose/reader.cpp
 )
+
+add_custom_target(test
+    COMMAND cd ../../lib/test && make check
+)
