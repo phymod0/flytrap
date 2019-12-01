@@ -2,18 +2,18 @@
 
 using std::size_t;
 
-template <typename PrimitiveInteger>
-static constexpr const unsigned char* readInteger(const unsigned char* data,
-						  PrimitiveInteger val)
+template <typename UnsignedInteger>
+static constexpr UnsignedInteger readUnsignedInteger(const unsigned char* data)
 {
-	constexpr unsigned int halfShift = 4;
-	constexpr unsigned int tailShift = 8 * ((sizeof val) - 1);
+	constexpr unsigned int byteShift = 8;
+	constexpr unsigned int tailShift = 8 * (sizeof(UnsignedInteger) - 1);
 
-	for (size_t i = 0; i < sizeof val; ++i) {
-		val = (static_cast<uint64_t>(val) >> halfShift) >> halfShift;
-		val |= static_cast<uint64_t>(*(data++)) << tailShift;
+	uintmax_t val = 0;
+	for (size_t i = 0; i < sizeof(UnsignedInteger); ++i) {
+		val >>= byteShift;
+		val |= static_cast<uintmax_t>(*(data++)) << tailShift;
 	}
-	return data;
+	return val;
 }
 
 namespace Transpose
@@ -28,49 +28,57 @@ Reader::Reader(const unsigned char* data) : data(data) {}
 
 Reader& Reader::operator>>(int8_t& val)
 {
-	data = readInteger<uint8_t>(data, val);
+	val = readUnsignedInteger<uint8_t>(data);
+	data += sizeof val;
 	return *this;
 }
 
 Reader& Reader::operator>>(int16_t& val)
 {
-	data = readInteger<uint16_t>(data, val);
+	val = readUnsignedInteger<uint16_t>(data);
+	data += sizeof val;
 	return *this;
 }
 
 Reader& Reader::operator>>(int32_t& val)
 {
-	data = readInteger<uint32_t>(data, val);
+	val = readUnsignedInteger<uint32_t>(data);
+	data += sizeof val;
 	return *this;
 }
 
 Reader& Reader::operator>>(int64_t& val)
 {
-	data = readInteger<uint64_t>(data, val);
+	val = readUnsignedInteger<uint64_t>(data);
+	data += sizeof val;
 	return *this;
 }
 
 Reader& Reader::operator>>(uint8_t& val)
 {
-	data = readInteger(data, val);
+	val = readUnsignedInteger<uint8_t>(data);
+	data += sizeof val;
 	return *this;
 }
 
 Reader& Reader::operator>>(uint16_t& val)
 {
-	data = readInteger(data, val);
+	val = readUnsignedInteger<uint16_t>(data);
+	data += sizeof val;
 	return *this;
 }
 
 Reader& Reader::operator>>(uint32_t& val)
 {
-	data = readInteger(data, val);
+	val = readUnsignedInteger<uint32_t>(data);
+	data += sizeof val;
 	return *this;
 }
 
 Reader& Reader::operator>>(uint64_t& val)
 {
-	data = readInteger(data, val);
+	val = readUnsignedInteger<uint64_t>(data);
+	data += sizeof val;
 	return *this;
 }
 

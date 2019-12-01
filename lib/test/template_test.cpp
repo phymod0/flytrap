@@ -2,27 +2,20 @@
 //////////////////// INCLUDE FILES TO TEST BELOW ////////////////////
 /////////////////////////////////////////////////////////////////////
 
-
 #include "transpose.cpp"
 
-
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////
-
 
 #include "ctest.h"
 
-
 TEST_DEFINE(testName, result)
 {
-        TEST_AUTONAME(result);
+	TEST_AUTONAME(result);
 
-        test_check(result, "Test description", expectedOutcome);
-        test_acheck(result, expectedOutcome);
+	test_check(result, "Test description", expectedOutcome);
+	test_acheck(result, expectedOutcome);
 }
 
-
-TEST_START(
-        testName,
-)
+TEST_START(testName, )

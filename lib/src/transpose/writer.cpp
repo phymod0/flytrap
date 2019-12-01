@@ -2,18 +2,17 @@
 
 using std::size_t;
 
-template <typename PrimitiveInteger>
-static constexpr unsigned char* writeInteger(unsigned char* data,
-					     PrimitiveInteger val)
+template <typename UnsignedInteger>
+static constexpr void writeUnsignedInteger(unsigned char* data,
+					   UnsignedInteger val)
 {
-	constexpr unsigned int halfShift = 4;
-	constexpr PrimitiveInteger byteMask = 0xFF;
+	constexpr unsigned int byteShift = 8;
 
-	for (size_t i = 0; i < sizeof val; ++i) {
-		*(data++) = val & byteMask;
-		val = (static_cast<uint64_t>(val) >> halfShift) >> halfShift;
+	uintmax_t extendedVal = val;
+	for (size_t i = 0; i < sizeof(UnsignedInteger); ++i) {
+		*(data++) = extendedVal;
+		extendedVal >>= byteShift;
 	}
-	return data;
 }
 
 namespace Transpose
@@ -25,49 +24,57 @@ Writer::Writer(unsigned char* data) : data(data) {}
 
 Writer& Writer::operator<<(int8_t val)
 {
-	data = writeInteger<uint8_t>(data, val);
+	writeUnsignedInteger<uint8_t>(data, val);
+	data += sizeof val;
 	return *this;
 }
 
 Writer& Writer::operator<<(int16_t val)
 {
-	data = writeInteger<uint16_t>(data, val);
+	writeUnsignedInteger<uint16_t>(data, val);
+	data += sizeof val;
 	return *this;
 }
 
 Writer& Writer::operator<<(int32_t val)
 {
-	data = writeInteger<uint32_t>(data, val);
+	writeUnsignedInteger<uint32_t>(data, val);
+	data += sizeof val;
 	return *this;
 }
 
 Writer& Writer::operator<<(int64_t val)
 {
-	data = writeInteger<uint64_t>(data, val);
+	writeUnsignedInteger<uint64_t>(data, val);
+	data += sizeof val;
 	return *this;
 }
 
 Writer& Writer::operator<<(uint8_t val)
 {
-	data = writeInteger(data, val);
+	writeUnsignedInteger(data, val);
+	data += sizeof val;
 	return *this;
 }
 
 Writer& Writer::operator<<(uint16_t val)
 {
-	data = writeInteger(data, val);
+	writeUnsignedInteger(data, val);
+	data += sizeof val;
 	return *this;
 }
 
 Writer& Writer::operator<<(uint32_t val)
 {
-	data = writeInteger(data, val);
+	writeUnsignedInteger(data, val);
+	data += sizeof val;
 	return *this;
 }
 
 Writer& Writer::operator<<(uint64_t val)
 {
-	data = writeInteger(data, val);
+	writeUnsignedInteger(data, val);
+	data += sizeof val;
 	return *this;
 }
 

@@ -1,9 +1,8 @@
 #include "ctest.h"
 
-#include <time.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <time.h>
 
 #define PSTDOUT(...) fprintf(stdout, __VA_ARGS__)
 #define PSTDERR(...) fprintf(stderr, __VA_ARGS__)
@@ -14,7 +13,6 @@
 #define YELLOW "\x1B[33m"
 #define RESET "\033[01;37m"
 
-
 typedef struct test_result {
 	const char* test_name;
 	unsigned long long passed, total;
@@ -22,12 +20,10 @@ typedef struct test_result {
 	unsigned long long n_failed_names;
 } test_result_t;
 
-
 static const char* status_str(bool condition)
 {
 	return condition ? GREEN "PASS" RESET : RED "FAIL" RESET;
 }
-
 
 static void print_test_results(test_result_t* result)
 {
@@ -39,24 +35,23 @@ static void print_test_results(test_result_t* result)
 		result->passed, result->total);
 	if (result->n_failed_names == 0)
 		return;
-	for (unsigned long long i=0; i<result->n_failed_names; ++i) {
+	for (unsigned long long i = 0; i < result->n_failed_names; ++i) {
 		PSTDOUT("\t[" RED "Failed #%llu" RESET "] ", i + 1);
 		PSTDOUT("%s\n", result->failed_checknames[i]);
 	}
 }
-
 
 static bool run_single_test(test_t test)
 {
 	srand(time(NULL));
 
 	test_result_t result;
-	for (int i=0; i<N_RUNS_PER_TEST; ++i) {
-        result.passed = 0;
-        result.total = 0;
-        memset(result.failed_checknames, 0,
-                sizeof result.failed_checknames);
-        result.n_failed_names = 0;
+	for (int i = 0; i < N_RUNS_PER_TEST; ++i) {
+		result.passed = 0;
+		result.total = 0;
+		memset(result.failed_checknames, 0,
+		       sizeof result.failed_checknames);
+		result.n_failed_names = 0;
 		test(&result);
 		if (result.passed != result.total)
 			break;
@@ -66,18 +61,16 @@ static bool run_single_test(test_t test)
 	return result.passed == result.total;
 }
 
-
 static void print_bar(const char* color, const char* hdr)
 {
 	size_t hdr_len = strlen(hdr), n_dashes = PRINT_WIDTH - 4 - hdr_len;
-	for (size_t i=0; i<(n_dashes+1)/2; ++i)
+	for (size_t i = 0; i < (n_dashes + 1) / 2; ++i)
 		PSTDOUT("-");
 	PSTDOUT("[ %s%s%s ]", color, hdr, RESET);
-	for (size_t i=0; i<n_dashes/2; ++i)
+	for (size_t i = 0; i < n_dashes / 2; ++i)
 		PSTDOUT("-");
 	PSTDOUT("\n");
 }
-
 
 void test_acheck(test_result_t* result, bool check)
 {
@@ -85,7 +78,6 @@ void test_acheck(test_result_t* result, bool check)
 	if (check)
 		++result->passed;
 }
-
 
 void test_check(test_result_t* result, const char* name, bool check)
 {
@@ -100,19 +92,17 @@ void test_check(test_result_t* result, const char* name, bool check)
 		PSTDERR("Cannot record check failure name (buffer full).\n");
 }
 
-
 void test_name(test_result_t* result, const char* name)
 {
 	result->test_name = name;
 }
-
 
 int test_run(const test_t* tests, size_t n_tests, const char* module_name)
 {
 	size_t n_passed = 0;
 	PSTDOUT(RESET "\n");
 	print_bar(RESET, module_name);
-	for (size_t i=0; i<n_tests; ++i)
+	for (size_t i = 0; i < n_tests; ++i)
 		if (run_single_test(tests[i]))
 			++n_passed;
 	bool passed = n_passed == n_tests;
@@ -123,7 +113,6 @@ int test_run(const test_t* tests, size_t n_tests, const char* module_name)
 	return (int)(n_tests - n_passed);
 }
 
-
 #undef RESET
 #undef YELLOW
 #undef BLUE
@@ -132,6 +121,5 @@ int test_run(const test_t* tests, size_t n_tests, const char* module_name)
 
 #undef PSTDERR
 #undef PSTDOUT
-
 
 #undef ERROR

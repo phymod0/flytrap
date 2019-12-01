@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/root/dev/flytrap/build/lib",
+  "command": "/usr/bin/c++   -I/root/dev/flytrap/lib/src    -o CMakeFiles/flytrap.dir/src/transpose/writer.cpp.o -c /root/dev/flytrap/lib/src/transpose/writer.cpp",
+  "file": "/root/dev/flytrap/lib/src/transpose/writer.cpp"
+},
+{
+  "directory": "/root/dev/flytrap/build/lib",
+  "command": "/usr/bin/c++   -I/root/dev/flytrap/lib/src    -o CMakeFiles/flytrap.dir/src/transpose/reader.cpp.o -c /root/dev/flytrap/lib/src/transpose/reader.cpp",
+  "file": "/root/dev/flytrap/lib/src/transpose/reader.cpp"
+}
+]
