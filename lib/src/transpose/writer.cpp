@@ -1,89 +1,74 @@
 #include "writer.hpp"
 
+using std::size_t;
+
+template <typename PrimitiveInteger>
+static constexpr unsigned char* writeInteger(unsigned char* data,
+					     PrimitiveInteger val)
+{
+	constexpr unsigned int halfShift = 4;
+	constexpr PrimitiveInteger byteMask = 0xFF;
+
+	for (size_t i = 0; i < sizeof val; ++i) {
+		*(data++) = val & byteMask;
+		val = (static_cast<uint64_t>(val) >> halfShift) >> halfShift;
+	}
+	return data;
+}
 
 namespace Transpose
 {
 
-Writer::Writer(char* data)
-        : data(data)
-{ }
+Writer::Writer(char* data) : data(reinterpret_cast<unsigned char*>(data)) {}
 
-
-Writer::Writer(unsigned char* data)
-        : data((char*)data)
-{ }
-
-
-#define SHIFT_BYTE(val) (val >>= 7, val >>= 1)
-#define WRITE_BYTE(val, data) \
-        (*(data++) = val & 0xFF, SHIFT_BYTE(val))
-
+Writer::Writer(unsigned char* data) : data(data) {}
 
 Writer& Writer::operator<<(int8_t val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                WRITE_BYTE(val, data);
-        return *this;
+	data = writeInteger<uint8_t>(data, val);
+	return *this;
 }
-
 
 Writer& Writer::operator<<(int16_t val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                WRITE_BYTE(val, data);
-        return *this;
+	data = writeInteger<uint16_t>(data, val);
+	return *this;
 }
-
 
 Writer& Writer::operator<<(int32_t val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                WRITE_BYTE(val, data);
-        return *this;
+	data = writeInteger<uint32_t>(data, val);
+	return *this;
 }
-
 
 Writer& Writer::operator<<(int64_t val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                WRITE_BYTE(val, data);
-        return *this;
+	data = writeInteger<uint64_t>(data, val);
+	return *this;
 }
-
 
 Writer& Writer::operator<<(uint8_t val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                WRITE_BYTE(val, data);
-        return *this;
+	data = writeInteger(data, val);
+	return *this;
 }
-
 
 Writer& Writer::operator<<(uint16_t val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                WRITE_BYTE(val, data);
-        return *this;
+	data = writeInteger(data, val);
+	return *this;
 }
-
 
 Writer& Writer::operator<<(uint32_t val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                WRITE_BYTE(val, data);
-        return *this;
+	data = writeInteger(data, val);
+	return *this;
 }
-
 
 Writer& Writer::operator<<(uint64_t val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                WRITE_BYTE(val, data);
-        return *this;
+	data = writeInteger(data, val);
+	return *this;
 }
 
-
-#undef WRITE_BYTE
-#undef SHIFT_BYTE
-
-}
+} // namespace Transpose

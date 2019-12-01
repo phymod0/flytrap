@@ -19,7 +19,7 @@ template<> void EDBSerializer<HelloWorld>(const HelloWorld& hw, char* data)
 }
 
 
-template<> HelloWorld EDBDeserializer<HelloWorld>(const char* data);
+template<> HelloWorld EDBDeserializer<HelloWorld>(const char* data)
 {
 }
 

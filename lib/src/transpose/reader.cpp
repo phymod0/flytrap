@@ -1,91 +1,77 @@
 #include "reader.hpp"
 
+using std::size_t;
+
+template <typename PrimitiveInteger>
+static constexpr const unsigned char* readInteger(const unsigned char* data,
+						  PrimitiveInteger val)
+{
+	constexpr unsigned int halfShift = 4;
+	constexpr unsigned int tailShift = 8 * ((sizeof val) - 1);
+
+	for (size_t i = 0; i < sizeof val; ++i) {
+		val = (static_cast<uint64_t>(val) >> halfShift) >> halfShift;
+		val |= static_cast<uint64_t>(*(data++)) << tailShift;
+	}
+	return data;
+}
 
 namespace Transpose
 {
 
 Reader::Reader(const char* data)
-        : data(data)
-{ }
+    : data(reinterpret_cast<const unsigned char*>(data))
+{
+}
 
-
-Reader::Reader(const unsigned char* data)
-        : data((const char*)data)
-{ }
-
-
-#define RSHIFT_BYTE(val) (val >>= 7, val >>= 1)
-#define READ_POS(val) (8*((sizeof val) - 1))
-#define READ_BYTE(val, data) \
-        (RSHIFT_BYTE(val), val |= ((uint64_t)*(data++)) << READ_POS(val))
-
+Reader::Reader(const unsigned char* data) : data(data) {}
 
 Reader& Reader::operator>>(int8_t& val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                READ_BYTE(val, data);
-        return *this;
+	data = readInteger<uint8_t>(data, val);
+	return *this;
 }
-
 
 Reader& Reader::operator>>(int16_t& val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                READ_BYTE(val, data);
-        return *this;
+	data = readInteger<uint16_t>(data, val);
+	return *this;
 }
-
 
 Reader& Reader::operator>>(int32_t& val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                READ_BYTE(val, data);
-        return *this;
+	data = readInteger<uint32_t>(data, val);
+	return *this;
 }
-
 
 Reader& Reader::operator>>(int64_t& val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                READ_BYTE(val, data);
-        return *this;
+	data = readInteger<uint64_t>(data, val);
+	return *this;
 }
-
 
 Reader& Reader::operator>>(uint8_t& val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                READ_BYTE(val, data);
-        return *this;
+	data = readInteger(data, val);
+	return *this;
 }
-
 
 Reader& Reader::operator>>(uint16_t& val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                READ_BYTE(val, data);
-        return *this;
+	data = readInteger(data, val);
+	return *this;
 }
-
 
 Reader& Reader::operator>>(uint32_t& val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                READ_BYTE(val, data);
-        return *this;
+	data = readInteger(data, val);
+	return *this;
 }
-
 
 Reader& Reader::operator>>(uint64_t& val)
 {
-        for (size_t i = 0; i < sizeof val; ++i)
-                READ_BYTE(val, data);
-        return *this;
+	data = readInteger(data, val);
+	return *this;
 }
 
-
-#undef READ_BYTE
-#undef READ_POS
-#undef RSHIFT_BYTE
-
-}
+} // namespace Transpose
