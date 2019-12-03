@@ -22,6 +22,13 @@ Writer::Writer(char* data) : data(reinterpret_cast<unsigned char*>(data)) {}
 
 Writer::Writer(unsigned char* data) : data(data) {}
 
+Writer& Writer::operator<<(char val)
+{
+	writeUnsignedInteger<unsigned char>(data, val);
+	data += sizeof val;
+	return *this;
+}
+
 Writer& Writer::operator<<(int8_t val)
 {
 	writeUnsignedInteger<uint8_t>(data, val);

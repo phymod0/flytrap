@@ -16,6 +16,7 @@ class Writer
 	explicit Writer(unsigned char* data);
 
 	template <typename T> Writer& operator<<(const T& val);
+	Writer& operator<<(char val);
 	Writer& operator<<(int8_t val);
 	Writer& operator<<(int16_t val);
 	Writer& operator<<(int32_t val);

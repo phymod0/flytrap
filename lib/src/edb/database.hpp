@@ -17,7 +17,6 @@
 #include "result.hpp"
 
 #include <cstdio>
-#include <memory>
 #include <string>
 
 namespace EDB
@@ -31,15 +30,18 @@ template <typename Entry> class Query;
 template <typename Entry> class Database
 {
       private:
-	static constexpr size_t DB_HDRSZ = 8;
+	static constexpr size_t dbHeaderSize = 8;
 	using DBHeader = struct {
 		uint32_t entryCount, entrySize;
 	};
 
-	static constexpr size_t ENTRY_HDRSZ = 4;
+	static constexpr size_t entryHeaderSize = 4;
 	using EntryHeader = struct {
 		uint32_t entryId;
 	};
+
+	static constexpr size_t entrySize = EDBSize<Entry>();
+	using EntryData = std::array<char, entrySize>;
 
 	class FileStream
 	{
@@ -68,8 +70,8 @@ template <typename Entry> class Database
 		uint32_t readEntryCount();
 		void writeEntryHeader(const EntryHeader& header);
 		EntryHeader readEntryHeader();
-		void writeEntryData(const char* data);
-		void readEntryData(char* data);
+		void writeEntryData(const EntryData& entryData);
+		void readEntryData(EntryData& entryData);
 	};
 
 	FileStream dbStream;
@@ -130,9 +132,9 @@ template <typename Entry> void Database<Entry>::FileStream::seekAt(long at)
 template <typename Entry>
 void Database<Entry>::FileStream::seekAtEntry(uint32_t entryIdx)
 {
-	constexpr size_t entrySize = ENTRY_HDRSZ + EDBSize<Entry>();
-	constexpr size_t headerSize = DB_HDRSZ;
-	const long entryPos = headerSize + entrySize * entryIdx;
+	constexpr size_t entryBlockSize = entryHeaderSize + entrySize;
+	constexpr size_t headerSize = dbHeaderSize;
+	const long entryPos = headerSize + entryBlockSize * entryIdx;
 	seekAt(entryPos);
 }
 
@@ -154,9 +156,12 @@ template <typename Entry> long Database<Entry>::FileStream::getFileSize()
 	return currentPos();
 }
 
+/* XXX: Find a portable alternative to ce+ */
+/* FIXME: Switch to file descriptors */
+
 template <typename Entry>
 Database<Entry>::FileStream::FileStream(const std::string& filename)
-    : fd(fopen(filename.c_str(), "we+")), filename(filename)
+    : fd(fopen(filename.c_str(), "ce+")), filename(filename)
 {
 	require(fd);
 }
@@ -166,7 +171,7 @@ Database<Entry>::FileStream::FileStream(const FileStream& fs)
     : filename(fs.filename)
 {
 	const long pos = ftell(fs.fd);
-	require(fd = fopen(fs.filename.c_str(), "w+"));
+	require(fd = fopen(fs.filename.c_str(), "ce+"));
 	if (pos >= 0) {
 		seekAt(pos);
 	}
@@ -182,7 +187,7 @@ Database<Entry>::FileStream::operator=(const FileStream& fs)
 	const long pos = ftell(fs.fd);
 	fclose(fd);
 	filename = fs.filename;
-	require(fd = fopen(fs.filename.c_str(), "w+"));
+	require(fd = fopen(fs.filename.c_str(), "ce+"));
 	if (pos >= 0) {
 		seekAt(pos);
 	}
@@ -211,11 +216,12 @@ template <typename Entry> uint32_t Database<Entry>::FileStream::readInteger()
 {
 	constexpr unsigned int byteShift = 8;
 	constexpr unsigned int tailShift = 24;
+	constexpr unsigned int eof = EOF;
 
 	uint32_t n;
 	for (int i = 0; i < 4; ++i) {
 		unsigned int c;
-		require((c = fgetc(fd)) != EOF);
+		require((c = fgetc(fd)) != eof);
 		n = (n >> byteShift) | (c << tailShift);
 	}
 	return n;
@@ -270,10 +276,9 @@ Database<Entry>::FileStream::readEntryHeader()
 }
 
 template <typename Entry>
-void Database<Entry>::FileStream::writeEntryData(const char* data)
+void Database<Entry>::FileStream::writeEntryData(const EntryData& entryData)
 {
-	constexpr size_t entrySize = EDBSize<Entry>();
-	const size_t nWritten = fwrite(data, 1, entrySize, fd);
+	const size_t nWritten = fwrite(entryData.data(), 1, entrySize, fd);
 	if (nWritten < entrySize) {
 		throw std::runtime_error("Failed to write entry");
 	}
@@ -281,10 +286,9 @@ void Database<Entry>::FileStream::writeEntryData(const char* data)
 }
 
 template <typename Entry>
-void Database<Entry>::FileStream::readEntryData(char* data)
+void Database<Entry>::FileStream::readEntryData(EntryData& entryData)
 {
-	constexpr size_t entrySize = EDBSize<Entry>();
-	const size_t nRead = fread(data, 1, entrySize, fd);
+	const size_t nRead = fread(entryData.data(), 1, entrySize, fd);
 	if (nRead < entrySize) {
 		throw std::runtime_error("Failed to read entry");
 	}
@@ -298,8 +302,6 @@ template <typename Entry> bool Database<Entry>::dbFileInitialized()
 template <typename Entry> void Database<Entry>::dbInitializeFile()
 {
 	constexpr uint32_t entryCount = 0;
-	constexpr uint32_t entrySize = EDBSize<Entry>();
-
 	dbStream.writeDBHeader({entryCount, entrySize});
 }
 
@@ -349,43 +351,43 @@ Database<Entry>::Database(const std::string& filename) : dbStream(filename)
 
 template <typename Entry> Result<Entry> Database<Entry>::get(ID id)
 {
-	constexpr size_t entrySize = EDBSize<Entry>();
-	std::unique_ptr<char> entryDataPtr(new char[entrySize]);
-	char* entryData = entryDataPtr.get();
+	EntryData entryData;
 
 	dbStream.seekAtEntry(getIdIndex(id));
 	dbStream.readEntryHeader();
 	dbStream.readEntryData(entryData);
-	Entry& entry = EDBDeserializer<Entry>(entryData);
+	Entry& entry = EDBDeserializer<Entry>(entryData.data());
 	return Result<Entry>(entry, id);
 }
 
 template <typename Entry> void Database<Entry>::put(const Result<Entry>& result)
 {
-	constexpr size_t entrySize = EDBSize<Entry>();
-	std::unique_ptr<char> entryDataPtr(new char[entrySize]);
-	char* entryData = entryDataPtr.get();
+	EntryData entryData;
 
 	const ID entryId = result.id;
 	dbStream.seekAtEntry(getIdIndex(entryId));
 	dbStream.writeEntryHeader({entryId});
-	EDBSerializer<Entry>(result.data, entryData);
+	EDBSerializer<Entry>(result.data, entryData.data());
 	dbStream.writeEntryData(entryData);
 }
 
 template <typename Entry> ID Database<Entry>::putNew(const Entry& entry)
 {
-	constexpr size_t entrySize = EDBSize<Entry>();
-	std::unique_ptr<char> entryDataPtr(new char[entrySize]);
-	char* entryData = entryDataPtr.get();
+	auto createNewEntryId = [&](uint32_t entryCount) -> ID {
+		if (entryCount == 0) {
+			return 1;
+		}
+		const ID lastId = getEntryId(entryCount - 1);
+		return lastId + 1;
+	};
 
+	EntryData entryData;
 	const uint32_t entryCount = getEntryCount();
-	const ID last = getEntryId(entryCount - 1);
-	const ID newEntryId = last + 1;
+	const ID newEntryId = createNewEntryId(entryCount);
 
 	dbStream.seekAtEntry(entryCount);
 	dbStream.writeEntryHeader({newEntryId});
-	EDBSerializer<Entry>(entry, entryData);
+	EDBSerializer<Entry>(entry, entryData.data());
 	dbStream.writeEntryData(entryData);
 	setEntryCount(entryCount + 1);
 	return newEntryId;
@@ -393,9 +395,7 @@ template <typename Entry> ID Database<Entry>::putNew(const Entry& entry)
 
 template <typename Entry> void Database<Entry>::erase(ID id)
 {
-	constexpr size_t entrySize = EDBSize<Entry>();
-	std::unique_ptr<char> entryDataPtr(new char[entrySize]);
-	char* entryData = entryDataPtr.get();
+	EntryData entryData;
 	const uint32_t eraseIdx = getIdIndex(id);
 	FileStream copyStream(dbStream);
 
@@ -421,9 +421,7 @@ void Database<Entry>::erase(const Result<Entry>& result)
 
 template <typename Entry> void Database<Entry>::erase(const Query<Entry>& query)
 {
-	constexpr size_t entrySize = EDBSize<Entry>();
-	std::unique_ptr<char> entryDataPtr(new char[entrySize]);
-	char* entryData = entryDataPtr.get();
+	EntryData entryData;
 	FileStream copyStream(dbStream);
 
 	dbStream.seekAtEntry(0);
@@ -434,7 +432,7 @@ template <typename Entry> void Database<Entry>::erase(const Query<Entry>& query)
 	for (uint32_t copyIdx = 0; copyIdx < entryCount; ++copyIdx) {
 		const EntryHeader entryHeader = copyStream.readEntryHeader();
 		copyStream.readEntryData(entryData);
-		if (query.includes(EDBDeserializer<Entry>(entryData))) {
+		if (query.includes(EDBDeserializer<Entry>(entryData.data()))) {
 			++nDeleted;
 			continue;
 		}
@@ -483,9 +481,7 @@ Database<Entry>::iterator::operator++(int)
 
 template <typename Entry> Result<Entry> Database<Entry>::iterator::operator*()
 {
-	constexpr size_t entrySize = EDBSize<Entry>();
-	std::unique_ptr<char> entryDataPtr(new char[entrySize]);
-	char* entryData = entryDataPtr.get();
+	EntryData entryData;
 
 	if (not isEntryIdxValid(entryIdx)) {
 		throw std::runtime_error("Dereferenced invalidated iterator");
@@ -494,7 +490,7 @@ template <typename Entry> Result<Entry> Database<Entry>::iterator::operator*()
 	db.dbStream.seekAtEntry(entryIdx);
 	EntryHeader entryHeader = db.dbStream.readEntryHeader();
 	db.dbStream.readEntryData(entryData);
-	Entry& entry = EDBDeserializer<Entry>(entryData);
+	Entry& entry = EDBDeserializer<Entry>(entryData.data());
 	return Result<Entry>(entry, entryHeader.entryId);
 }
 
@@ -531,8 +527,5 @@ template <typename Entry> Query<Entry> Database<Entry>::query()
 }
 
 } // namespace EDB
-
-#undef ENTRY_HDRSZ
-#undef DB_HDRSZ
 
 #endif /* EDB_DATABASE */

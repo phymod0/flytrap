@@ -6,7 +6,7 @@
 #include <sys/cdefs.h>
 
 #define MAX_CHECKNAMES_PER_UNIT 256
-#define N_RUNS_PER_TEST 1024
+#define N_RUNS_PER_TEST 3
 #define PRINT_WIDTH 64
 
 struct test_result;

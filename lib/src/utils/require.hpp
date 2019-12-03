@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <sys/errno.h>
 
+// TODO: Implement errorOn and use where require won't work
+
 namespace CErrors
 {
 
