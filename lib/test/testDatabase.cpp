@@ -60,7 +60,7 @@ uint32_t readStreamUint32(FILE* fd)
 	constexpr unsigned int byteShift = 8;
 	constexpr unsigned int tailShift = 24;
 
-	uint32_t n;
+	uint32_t n = 0;
 	for (int i = 0; i < 4; ++i) {
 		unsigned int c;
 		c = fgetc(fd);
