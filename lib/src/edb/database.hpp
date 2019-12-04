@@ -371,8 +371,7 @@ template <typename Entry> Result<Entry> Database<Entry>::get(ID id)
 	dbStream.seekAtEntry(getIdIndex(id));
 	dbStream.readEntryHeader();
 	dbStream.readEntryData(entryData);
-	Entry& entry = EDBDeserializer<Entry>(entryData.data());
-	return Result<Entry>(entry, id);
+	return Result<Entry>(EDBDeserializer<Entry>(entryData.data()), id);
 }
 
 template <typename Entry> void Database<Entry>::put(const Result<Entry>& result)
@@ -505,8 +504,8 @@ template <typename Entry> Result<Entry> Database<Entry>::iterator::operator*()
 	db.dbStream.seekAtEntry(entryIdx);
 	EntryHeader entryHeader = db.dbStream.readEntryHeader();
 	db.dbStream.readEntryData(entryData);
-	Entry& entry = EDBDeserializer<Entry>(entryData.data());
-	return Result<Entry>(entry, entryHeader.entryId);
+	return Result<Entry>(EDBDeserializer<Entry>(entryData.data()),
+			     entryHeader.entryId);
 }
 
 template <typename Entry>

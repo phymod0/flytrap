@@ -7,9 +7,9 @@ namespace EDB
 {
 
 template <typename Entry> struct Result {
+	Entry data;
 	ID id;
-	Entry& data;
-	Result(Entry& entry, ID id) : data(entry), id(id) {}
+	Result(Entry entry, ID id) : data(entry), id(id) {}
 };
 
 } // namespace EDB

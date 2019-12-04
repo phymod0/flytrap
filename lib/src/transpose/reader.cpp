@@ -26,6 +26,13 @@ Reader::Reader(const char* data)
 
 Reader::Reader(const unsigned char* data) : data(data) {}
 
+Reader& Reader::operator>>(char& val)
+{
+	val = readUnsignedInteger<unsigned char>(data);
+	data += sizeof val;
+	return *this;
+}
+
 Reader& Reader::operator>>(int8_t& val)
 {
 	val = readUnsignedInteger<uint8_t>(data);

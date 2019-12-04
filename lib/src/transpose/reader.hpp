@@ -16,6 +16,7 @@ class Reader
 	explicit Reader(const unsigned char* data);
 
 	template <typename T> Reader& operator>>(T& val);
+	Reader& operator>>(char& val);
 	Reader& operator>>(int8_t& val);
 	Reader& operator>>(int16_t& val);
 	Reader& operator>>(int32_t& val);
