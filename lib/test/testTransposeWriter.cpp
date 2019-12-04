@@ -13,6 +13,8 @@
 
 #include <cstring>
 
+// TODO: Test every primitive type
+
 class GData
 {
       public:

@@ -11,6 +11,8 @@
 
 #include "ctest.h"
 
+// TODO: Test every primitive type
+
 class GData
 {
       public:
