@@ -98,8 +98,6 @@ TEST_DEFINE(doNotOverwriteExistingDatabase, result)
 	long fileSize = (fseek(fd, 0, SEEK_END), ftell(fd));
 	long expectedFileSize = 3 * sizeof(uint32_t) + EDBSize<HelloWorld>();
 
-	printf("Comparing %ld and %ld\n", fileSize, expectedFileSize);
-
 	fclose(fd);
 	remove(filename.c_str());
 

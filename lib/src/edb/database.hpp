@@ -10,6 +10,13 @@
  *      - Implement readResult and writeResult to avoid code duplication
  *      - Privatize internal FileStream functions
  *      - Functionality to delete Result<Entry> list
+ *      - Move FileStream outside class and move db-specific functions to
+ *	  Database as wrappers
+ * XXX:
+ *	- Find a portable alternative to the re+b file open mode
+ * FIXME:
+ *	- Use C++ fstreams instead of file pointers then remove openFile +
+ *	  possibly FileStream
  */
 
 #include "common.hpp"
@@ -46,8 +53,10 @@ template <typename Entry> class Database
 	class FileStream
 	{
 	      private:
+		FILE* openFile(const std::string& filepath);
+
 		FILE* fd;
-		std::string filename;
+		std::string filepath;
 
 	      public:
 		void seekStart();
@@ -57,7 +66,7 @@ template <typename Entry> class Database
 		long currentPos();
 		long getFileSize();
 
-		explicit FileStream(const std::string& filename);
+		explicit FileStream(const std::string& filepath);
 		FileStream(const FileStream& fs);
 		FileStream& operator=(const FileStream& fs);
 		~FileStream();
@@ -84,7 +93,7 @@ template <typename Entry> class Database
 	uint32_t getIdIndex(ID find);
 
       public:
-	explicit Database(const std::string& filename);
+	explicit Database(const std::string& filepath);
 
 	Result<Entry> get(ID id);
 	void put(const Result<Entry>& result);
@@ -118,6 +127,16 @@ template <typename Entry> class Database
 
 	Query<Entry> query();
 };
+
+template <typename Entry>
+FILE* Database<Entry>::FileStream::openFile(const std::string& filepath)
+{
+	FILE* fd;
+	require((fd = fopen(filepath.c_str(), "ab")) != NULL);   // NOLINT
+	fclose(fd);                                              // NOLINT
+	require((fd = fopen(filepath.c_str(), "re+b")) != NULL); // NOLINT
+	return fd;
+}
 
 template <typename Entry> void Database<Entry>::FileStream::seekStart()
 {
@@ -156,22 +175,18 @@ template <typename Entry> long Database<Entry>::FileStream::getFileSize()
 	return currentPos();
 }
 
-/* XXX: Find a portable alternative to ce+ */
-/* FIXME: Switch to file descriptors */
-
 template <typename Entry>
-Database<Entry>::FileStream::FileStream(const std::string& filename)
-    : fd(fopen(filename.c_str(), "ce+")), filename(filename)
+Database<Entry>::FileStream::FileStream(const std::string& filepath)
+    : fd(openFile(filepath)), filepath(filepath)
 {
-	require(fd);
 }
 
 template <typename Entry>
 Database<Entry>::FileStream::FileStream(const FileStream& fs)
-    : filename(fs.filename)
+    : filepath(fs.filepath)
 {
 	const long pos = ftell(fs.fd);
-	require(fd = fopen(fs.filename.c_str(), "ce+"));
+	require(fd = fopen(fs.filepath.c_str(), "re+b"));
 	if (pos >= 0) {
 		seekAt(pos);
 	}
@@ -186,8 +201,8 @@ Database<Entry>::FileStream::operator=(const FileStream& fs)
 	}
 	const long pos = ftell(fs.fd);
 	fclose(fd);
-	filename = fs.filename;
-	require(fd = fopen(fs.filename.c_str(), "ce+"));
+	filepath = fs.filepath;
+	require(fd = fopen(fs.filepath.c_str(), "re+b"));
 	if (pos >= 0) {
 		seekAt(pos);
 	}
@@ -342,7 +357,7 @@ template <typename Entry> uint32_t Database<Entry>::getIdIndex(ID find)
 }
 
 template <typename Entry>
-Database<Entry>::Database(const std::string& filename) : dbStream(filename)
+Database<Entry>::Database(const std::string& filepath) : dbStream(filepath)
 {
 	if (not dbFileInitialized()) {
 		dbInitializeFile();
