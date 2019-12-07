@@ -12,6 +12,7 @@
  *      - Functionality to delete Result<Entry> list
  *      - Move FileStream outside class and move db-specific functions to
  *	  Database as wrappers
+ *	- Ability to modify Result<Entry>'s in non-const iteration
  * XXX:
  *	- Find a portable alternative to the re+b file open mode
  * FIXME:
@@ -410,6 +411,7 @@ template <typename Entry> ID Database<Entry>::putNew(const Entry& entry)
 template <typename Entry> void Database<Entry>::erase(ID id)
 {
 	EntryData entryData;
+	const uint32_t entryCount = getEntryCount();
 	const uint32_t eraseIdx = getIdIndex(id);
 	FileStream copyStream(dbStream);
 
@@ -418,7 +420,6 @@ template <typename Entry> void Database<Entry>::erase(ID id)
 	copyStream.readEntryHeader();
 	copyStream.readEntryData(entryData);
 
-	const uint32_t entryCount = getEntryCount();
 	for (uint32_t copyIdx = eraseIdx + 1; copyIdx < entryCount; ++copyIdx) {
 		dbStream.writeEntryHeader(copyStream.readEntryHeader());
 		copyStream.readEntryData(entryData);

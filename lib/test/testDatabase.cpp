@@ -126,7 +126,7 @@ TEST_DEFINE(putNewAndGet, result)
 	const std::string filename = "helloworld.db";
 
 	{
-		const size_t size = getRandom<size_t>(10, 100);
+		const size_t size = getRandom<size_t>(10, 1000);
 
 		EDB::Database<HelloWorld> db(filename);
 
@@ -180,4 +180,229 @@ TEST_DEFINE(putNewAndGet, result)
 	remove(filename.c_str());
 }
 
-TEST_START(createNewDatabase, doNotOverwriteExistingDatabase, putNewAndGet)
+TEST_DEFINE(databaseGetAndPut, result)
+{
+	TEST_AUTONAME(result);
+
+	const std::string filename = "helloworld.db";
+
+	{
+		const size_t size = getRandom<size_t>(10, 1000);
+
+		EDB::Database<HelloWorld> db(filename);
+
+		srand(getpid());
+
+		// Write initial entries
+		std::vector<HelloWorld> hwArray(size);
+		std::vector<EDB::ID> newIds;
+		for (HelloWorld& hw : hwArray) {
+			hw.letter1 = getRandom('a', 'z');
+			hw.letter2 = getRandom('p', 't');
+			hw.num1 = getRandom(0, 100);
+			hw.num2 = getRandom(2, 60);
+			hw.num3 = getRandom(100, 1000);
+			std::vector<char> chars = getRandomNIntegers<char>(5);
+			memcpy(hw.greeting, &chars[0], 5);
+			newIds.push_back(db.putNew(hw));
+		}
+
+		// Modify random entries with put()
+		for (size_t i = 0; i < size; ++i) {
+			if (getRandom(0, 10) % 3 != 0) {
+				continue;
+			}
+			HelloWorld& tempHw = hwArray[i];
+			EDB::Result<HelloWorld> res = db.get(newIds[i]);
+			res.data.letter1 = tempHw.letter1 = getRandom('a', 'z');
+			res.data.letter2 = tempHw.letter2 = getRandom('p', 't');
+			res.data.num1 = tempHw.num1 = getRandom(0, 100);
+			res.data.num2 = tempHw.num2 = getRandom(2, 60);
+			res.data.num3 = tempHw.num3 = getRandom(100, 1000);
+			db.put(res);
+		}
+
+		bool correctData = true;
+
+		// Read and verify
+		for (size_t i = 0; i < size; ++i) {
+			const EDB::ID entryId = newIds[i];
+			const HelloWorld hw = hwArray[i];
+
+			const EDB::Result<HelloWorld> res = db.get(entryId);
+
+			correctData =
+			    correctData and res.data.letter1 == hw.letter1;
+			correctData =
+			    correctData and res.data.letter2 == hw.letter2;
+			correctData = correctData and res.data.num1 == hw.num1;
+			correctData = correctData and res.data.num2 == hw.num2;
+			correctData = correctData and res.data.num3 == hw.num3;
+			correctData =
+			    correctData and
+			    memcmp(res.data.greeting, hw.greeting, 5) == 0;
+		}
+
+		test_check(result,
+			   "Entries read from get as written through putNew",
+			   correctData);
+	}
+
+	remove(filename.c_str());
+}
+
+TEST_DEFINE(databaseErase, result)
+{
+	TEST_AUTONAME(result);
+
+	const std::string filename = "helloworld.db";
+
+	{
+		const size_t size = getRandom<size_t>(10, 1000);
+
+		EDB::Database<HelloWorld> db(filename);
+
+		srand(getpid());
+
+		// Write initial entries
+		std::vector<HelloWorld> hwArray(size);
+		std::vector<EDB::ID> newIds;
+		for (HelloWorld& hw : hwArray) {
+			hw.letter1 = getRandom('a', 'z');
+			hw.letter2 = getRandom('p', 't');
+			hw.num1 = getRandom(0, 100);
+			hw.num2 = getRandom(2, 60);
+			hw.num3 = getRandom(100, 1000);
+			std::vector<char> chars = getRandomNIntegers<char>(5);
+			memcpy(hw.greeting, &chars[0], 5);
+			newIds.push_back(db.putNew(hw));
+		}
+
+		using EraseType =
+		    enum { ERASE_BY_ID,
+			   ERASE_BY_RESULT,
+			   DONT_ERASE,
+		    };
+		std::vector<EraseType> idxEraseType(size);
+		// Erase random entries
+		for (size_t i = 0; i < size; ++i) {
+			const EDB::ID id = newIds[i];
+			const int random = getRandom(0, 100) % 7;
+			if (random < 3) {
+				idxEraseType[i] = DONT_ERASE;
+				continue;
+			}
+			if (random < 5) {
+				idxEraseType[i] = ERASE_BY_ID;
+				db.erase(id);
+			} else {
+				idxEraseType[i] = ERASE_BY_RESULT;
+				EDB::Result<HelloWorld> res = db.get(id);
+				db.erase(res);
+			}
+		}
+
+		bool undeletedExist = true;
+		bool erasedById = true;
+		bool erasedByResult = true;
+
+		// Verify deletion
+		auto isDeleted = [&](EDB::ID entryId) {
+			try {
+				db.get(entryId);
+				return false;
+			} catch (const std::runtime_error& e) {
+				/* TODO: compare with what() */
+				return true;
+			}
+		};
+		for (size_t i = 0; i < size; ++i) {
+			const EDB::ID entryId = newIds[i];
+			const EraseType eraseType = idxEraseType[i];
+			const bool deleted = isDeleted(entryId);
+
+			undeletedExist =
+			    undeletedExist and
+			    (eraseType != DONT_ERASE or not deleted);
+
+			erasedById = erasedById and
+				     (eraseType != ERASE_BY_ID or deleted);
+
+			erasedByResult = erasedByResult and
+					 (eraseType != ERASE_BY_ID or deleted);
+		}
+
+		test_check(result, "Unerased entries still exist",
+			   undeletedExist);
+		test_check(result, "Entries deleted by ID are deleted",
+			   erasedById);
+		test_check(result, "Entries deleted by result are deleted",
+			   erasedByResult);
+	}
+
+	remove(filename.c_str());
+}
+
+TEST_DEFINE(databaseIteration, result)
+{
+	TEST_AUTONAME(result);
+
+	const std::string filename = "helloworld.db";
+
+	{
+		const size_t size = getRandom<size_t>(10, 1000);
+
+		EDB::Database<HelloWorld> db(filename);
+
+		srand(getpid());
+
+		// Write entries
+		std::vector<HelloWorld> hwArray(size);
+		std::vector<EDB::ID> newIds;
+		for (HelloWorld& hw : hwArray) {
+			hw.letter1 = getRandom('a', 'z');
+			hw.letter2 = getRandom('p', 't');
+			hw.num1 = getRandom(0, 100);
+			hw.num2 = getRandom(2, 60);
+			hw.num3 = getRandom(100, 1000);
+			std::vector<char> chars = getRandomNIntegers<char>(5);
+			memcpy(hw.greeting, &chars[0], 5);
+			newIds.push_back(db.putNew(hw));
+		}
+
+		bool correctIteration = true;
+		bool correctIds = true;
+
+		// Read and verify
+		size_t i = 0;
+		for (const EDB::Result<HelloWorld>& res : db) {
+			const EDB::ID id = newIds[i];
+			const HelloWorld hw = hwArray[i];
+			correctIteration =
+			    correctIteration and res.data.letter1 == hw.letter1;
+			correctIteration =
+			    correctIteration and res.data.letter2 == hw.letter2;
+			correctIteration =
+			    correctIteration and res.data.num1 == hw.num1;
+			correctIteration =
+			    correctIteration and res.data.num2 == hw.num2;
+			correctIteration =
+			    correctIteration and res.data.num3 == hw.num3;
+			correctIteration =
+			    correctIteration and
+			    memcmp(res.data.greeting, hw.greeting, 5) == 0;
+			correctIds = correctIds and id == res.id;
+			++i;
+		}
+
+		test_check(result, "Iteration returns correct data",
+			   correctIteration);
+		test_check(result, "Iteration goes over IDs in correct order",
+			   correctIds);
+	}
+
+	remove(filename.c_str());
+}
+
+TEST_START(createNewDatabase, doNotOverwriteExistingDatabase, putNewAndGet,
+	   databaseGetAndPut, databaseErase, databaseIteration)

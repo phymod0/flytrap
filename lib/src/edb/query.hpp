@@ -27,8 +27,8 @@ template <typename Entry> class Query
 
       private:
 	Database<Entry>& db;
-	std::list<const KeepFn&> keepers;
-	std::list<const OrderFn&> orders;
+	std::list<KeepFn> keepers;
+	std::list<OrderFn> orders;
 	bool keep(const Entry& entry);
 	int order(const Entry& left, const Entry& right);
 
@@ -37,8 +37,8 @@ template <typename Entry> class Query
 
 	bool includes(const Entry& entry);
 
-	Query<Entry> filter(const KeepFn& keep);
-	Query<Entry> sort(const OrderFn& order);
+	Query<Entry> filter(KeepFn keep);
+	Query<Entry> sort(OrderFn order);
 
 	std::list<Result<Entry>> fetch();
 	void erase();
@@ -74,12 +74,12 @@ template <typename Entry> bool Query<Entry>::includes(const Entry& entry)
 	return keep(entry);
 }
 
-template <typename Entry> Query<Entry> Query<Entry>::filter(const KeepFn& keep)
+template <typename Entry> Query<Entry> Query<Entry>::filter(KeepFn keep)
 {
 	keepers.push_back(keep);
 }
 
-template <typename Entry> Query<Entry> Query<Entry>::sort(const OrderFn& order)
+template <typename Entry> Query<Entry> Query<Entry>::sort(OrderFn order)
 {
 	orders.push_front(order);
 }
