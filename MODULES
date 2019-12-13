@@ -1,0 +1,153 @@
+FEATURES:
+- Asynchronous stage event logging from decoy pages
+- Layer2-based persistent logging on server side
+- Starting/stopping session, session logs saved
+- Construct server /log, /stage, /page, /success e.t.c. URL from window.location.href
+- flytrap.js library file:
+        o Override server IP (instead of `${window.location.href}`)
+        o Stage notification (setStage)
+        o Page notification (single definePage call)
+        o Log levels: debug, info, warning, error
+        o Success submission API
+        o Dynamically generated JSON config by flytrap server on start
+        o ft prefix for camelhump names
+        (Future) o Custom self-logging react components, e.g.:
+                + Time-logging body
+                + Write-logging text
+                + Click-logging button
+                + Self-submitting form
+- Built-in captive portal redirection rules and custom rules
+- Per-session/All-session/Time-range statistics:
+        o Relative/absolute percentage view
+- Optional custom file for session logging (binary search)
+- View log history of sessions:
+       o Timeframe/session/device/decoy filters
+       o Timeframe/session/device/decoy unification
+       o Timeframe/session/device/decoy sorting
+       o Stage stats under search criteria
+       o Page stats under search criteria
+       o Thumbnails satisfying filters, unifications and sort order
+- Time logging per page (periodic or edge-triggered)
+- Settings:
+        o Custom port (possibly IP, keep option in lib)
+        o Default interface
+        o Path to flytrap files
+        o Decoy config
+- MAC/IP blacklist in case of spam
+(Future) - Default trap decoy and MAC-specific trap decoys
+(Future) - Rank logs by priority
+
+WORKFLOW:
+(WEB/GUI):
+- Top bar:
+        o Server start/stop:
+                + Interface spec with default
+                + IP/port spec in separate fields with defaults
+                + Folder containing decoy with default (last)
+                + Optionally include location information
+                + start/resume/pause + stop button (grey out necessary fields)
+                + Live logs on start, clear on restart, keep on pause/stop
+                + Labeled results logged horizontally, duplicate of Results section list
+                + Statistics on stop
+                + Save session, warning on restart without save
+                        > Hold unsaved session data in backend
+        o Results:
+                + Device filter
+                + List of devices:
+                        > Option to label device
+                        > "Unnamed" label by default to incentivize label
+                        > Also show MAC and OUI vendor and ?session location
+                        > Option to show/hide history per device
+                        > Latest result object shown by default
+                + Option to dump to file
+        xxx Success rate/stats history (DEPRECATED, DO NOT IMPLEMENT):
+                + Filter panel with timeframe, session, device, decoy with reset
+                + Labeled suggestions for device field
+                + Defaults: "Latest" for session, "All" for timeframe
+                + Stage statistics based on filters
+                + Time spent per page statistics based on filters
+        o Log history:
+                + Filter panel with timeframe, session, device, decoy with reset
+                + Labeled suggestions for device search input field
+                + Defaults: "Latest" for session, "All" for timeframe
+                + Unify panel with session, device, decoy with reset
+                + List of logs, click to expand, option to write to file
+                        > Front-end option to filter log levels
+                        (Future) > Option to annotate MACs with labels
+        o Sessions:
+                + List entries from result history 
+                        > List with date, time range
+                        > Option to show stage/pagetime statistics
+                + Associate information with each entry
+                        > Location
+                + Delete session
+        o Devices:
+                + Label/MAC entries from result history 
+                        > Editable label
+                        > Add OUI vendor names
+                + Associate information with each entry
+                + Delete device
+        o Settings/configuration:
+                + Dump result to file? True by default + default path + option
+                + Path to flytrap files
+                + Ignore client once success reported
+                + Target specific MAC/IPs / whitelist
+                (Future) + Custom captive portal redirection rules
+                + MAC/IP spam filter / blacklist
+                (Future) + Conditional decoys
+(API/CLI):
+- Server configuration before starting:
+        o iface/IP/port
+        o Whether to dump the result to a file
+        o Which file to dump the result to
+        o Decoy folder
+        o Physical location information
+        o Path to flytrap files
+        o Report success only once
+        o MAC/IP whitelist and blacklist
+        o Optional session name
+- Show server configuration
+- Start/stop/pause/resume flytrap server
+        o Error messages when a field cannot be changed on paused
+- Suggest wireless interfaces ordered by suitability
+- Sessions:
+        o Save "current" session under specific name
+        o List sessions ("current" for ongoing or stopped before restart)
+        o Reveal session logs, pagetime stats and stage stats
+        o Modify particular session properties
+        o Dump session to file (including logs)
+- Results:
+        o 
+
+
+MODULES:
+- defconfig:
+        o Internal logs to .flytrap/flytrap.log folder (or a better place)
+        o Internal session logs to .flytrap/logs/
+        o Internal session database to .flytrap/db/sessions.db
+        o Internal device database to .flytrap/db/devices.db
+(CLASSES):
+- List
+- Iflist
+- Edb (minimalistic database)
+- Device
+- Session
+        (SUBCLASS)
+        o Logger
+                (SUBCLASS)
+                + LogEntry
+- Result
+- JSConfig
+- FTServer
+        (SUBCLASS)
+        o FTConfig
+        (METHOD)
+- Captive
+- Oui
+- Log
+- Ftlog
+- RESTServer
+- Json
+
+TIMELINE:
+
