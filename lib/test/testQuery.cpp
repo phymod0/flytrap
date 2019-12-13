@@ -210,30 +210,27 @@ TEST_DEFINE(databaseEntrySort, result)
 			continue;
 		}
 
-		int ord1 = order1(prevHw, hw);
-		int ord2 = order2(prevHw, hw);
-		int ord3 = order3(prevHw, hw);
-		if (ord3 > 0) {
+		if (prevHw.num3 > hw.num3) {
 			correctSortOrder = false;
 			break;
 		}
-		if (ord3 < 0) {
+		if (prevHw.num3 < hw.num3) {
 			prevHw = hw;
 			continue;
 		}
-		if (ord2 > 0) {
+		if (prevHw.num2 > hw.num2) {
 			correctSortOrder = false;
 			break;
 		}
-		if (ord2 < 0) {
+		if (prevHw.num2 < hw.num2) {
 			prevHw = hw;
 			continue;
 		}
-		if (ord1 > 0) {
+		if (prevHw.num1 > hw.num1) {
 			correctSortOrder = false;
 			break;
 		}
-		if (ord1 <= 0) {
+		if (prevHw.num1 <= hw.num1) {
 			prevHw = hw;
 			continue;
 		}

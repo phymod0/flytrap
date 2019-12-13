@@ -98,7 +98,7 @@ template <typename Entry> std::list<Result<Entry>> Query<Entry>::fetch()
 
 	results.sort(
 	    [&](const Result<Entry>& left, const Result<Entry>& right) {
-		    return order(left.data, right.data);
+		    return order(left.data, right.data) < 0;
 	    });
 
 	return results;
