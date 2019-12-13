@@ -13,11 +13,11 @@
  *      - Function composition instead of lists
  */
 
-template <typename Entry> struct Result;
-template <typename Entry> class Database;
-
 namespace EDB
 {
+
+template <typename Entry> struct Result;
+template <typename Entry> class Database;
 
 template <typename Entry> class Query
 {
@@ -26,14 +26,14 @@ template <typename Entry> class Query
 	using OrderFn = std::function<int(const Entry&, const Entry&)>;
 
       private:
-	Database<Entry>& db;
+	Database<Entry> db;
 	std::list<KeepFn> keepers;
 	std::list<OrderFn> orders;
 	bool keep(const Entry& entry);
 	int order(const Entry& left, const Entry& right);
 
       public:
-	explicit Query(Database<Entry>& db);
+	explicit Query(Database<Entry> db);
 
 	bool includes(const Entry& entry);
 
@@ -67,7 +67,7 @@ int Query<Entry>::order(const Entry& left, const Entry& right)
 	return 0;
 }
 
-template <typename Entry> Query<Entry>::Query(Database<Entry>& db) : db(db) {}
+template <typename Entry> Query<Entry>::Query(Database<Entry> db) : db(db) {}
 
 template <typename Entry> bool Query<Entry>::includes(const Entry& entry)
 {
@@ -77,11 +77,13 @@ template <typename Entry> bool Query<Entry>::includes(const Entry& entry)
 template <typename Entry> Query<Entry> Query<Entry>::filter(KeepFn keep)
 {
 	keepers.push_back(keep);
+	return *this;
 }
 
 template <typename Entry> Query<Entry> Query<Entry>::sort(OrderFn order)
 {
 	orders.push_front(order);
+	return *this;
 }
 
 template <typename Entry> std::list<Result<Entry>> Query<Entry>::fetch()

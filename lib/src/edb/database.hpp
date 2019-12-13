@@ -4,7 +4,6 @@
 /*
  * TODO:
  *      - Remove entrySize from the header or use for verification
- *      - std::shared_ptr<FILE> fd; instead of FILE* fd; in FileStream
  *      - Error status instead of exception throwing on not found
  *      - const-qualify member functions where possible
  *      - Implement readResult and writeResult to avoid code duplication
@@ -25,6 +24,7 @@
 #include "result.hpp"
 
 #include <cstdio>
+#include <memory>
 #include <string>
 
 namespace EDB
@@ -53,10 +53,12 @@ template <typename Entry> class Database
 
 	class FileStream
 	{
-	      private:
-		FILE* openFile(const std::string& filepath);
+		friend class Database;
 
-		FILE* fd;
+	      private:
+		std::shared_ptr<FILE> openFile(const std::string& filepath);
+
+		std::shared_ptr<FILE> fdPtr;
 		std::string filepath;
 
 	      public:
@@ -68,9 +70,6 @@ template <typename Entry> class Database
 		long getFileSize();
 
 		explicit FileStream(const std::string& filepath);
-		FileStream(const FileStream& fs);
-		FileStream& operator=(const FileStream& fs);
-		~FileStream();
 
 		void writeInteger(uint32_t n);
 		uint32_t readInteger();
@@ -130,22 +129,25 @@ template <typename Entry> class Database
 };
 
 template <typename Entry>
-FILE* Database<Entry>::FileStream::openFile(const std::string& filepath)
+std::shared_ptr<FILE>
+Database<Entry>::FileStream::openFile(const std::string& filepath)
 {
 	FILE* fd;
 	require((fd = fopen(filepath.c_str(), "ab")) != NULL);   // NOLINT
 	fclose(fd);                                              // NOLINT
 	require((fd = fopen(filepath.c_str(), "re+b")) != NULL); // NOLINT
-	return fd;
+	return std::shared_ptr<FILE>(fd, fclose);
 }
 
 template <typename Entry> void Database<Entry>::FileStream::seekStart()
 {
+	FILE* fd = fdPtr.get();
 	require(fseek(fd, 0, SEEK_SET) == 0);
 }
 
 template <typename Entry> void Database<Entry>::FileStream::seekAt(long at)
 {
+	FILE* fd = fdPtr.get();
 	require(fseek(fd, at, SEEK_SET) == 0);
 }
 
@@ -160,12 +162,14 @@ void Database<Entry>::FileStream::seekAtEntry(uint32_t entryIdx)
 
 template <typename Entry> void Database<Entry>::FileStream::seekEnd()
 {
+	FILE* fd = fdPtr.get();
 	require(fseek(fd, 0, SEEK_END) == 0);
 }
 
 template <typename Entry> long Database<Entry>::FileStream::currentPos()
 {
 	long result;
+	FILE* fd = fdPtr.get();
 	require((result = ftell(fd)) >= 0);
 	return result;
 }
@@ -178,41 +182,8 @@ template <typename Entry> long Database<Entry>::FileStream::getFileSize()
 
 template <typename Entry>
 Database<Entry>::FileStream::FileStream(const std::string& filepath)
-    : fd(openFile(filepath)), filepath(filepath)
+    : fdPtr(openFile(filepath)), filepath(filepath)
 {
-}
-
-template <typename Entry>
-Database<Entry>::FileStream::FileStream(const FileStream& fs)
-    : filepath(fs.filepath)
-{
-	const long pos = ftell(fs.fd);
-	require(fd = fopen(fs.filepath.c_str(), "re+b"));
-	if (pos >= 0) {
-		seekAt(pos);
-	}
-}
-
-template <typename Entry>
-typename Database<Entry>::FileStream&
-Database<Entry>::FileStream::operator=(const FileStream& fs)
-{
-	if (this == &fs) {
-		return *this;
-	}
-	const long pos = ftell(fs.fd);
-	fclose(fd);
-	filepath = fs.filepath;
-	require(fd = fopen(fs.filepath.c_str(), "re+b"));
-	if (pos >= 0) {
-		seekAt(pos);
-	}
-	return *this;
-}
-
-template <typename Entry> Database<Entry>::FileStream::~FileStream()
-{
-	fclose(fd);
 }
 
 template <typename Entry>
@@ -221,6 +192,7 @@ void Database<Entry>::FileStream::writeInteger(uint32_t n)
 	constexpr uint32_t byteMask = 0xFF;
 	constexpr unsigned int byteShift = 8;
 
+	FILE* fd = fdPtr.get();
 	for (int i = 0; i < 4; ++i) {
 		require(fputc(n & byteMask, fd) != EOF);
 		n >>= byteShift;
@@ -235,6 +207,7 @@ template <typename Entry> uint32_t Database<Entry>::FileStream::readInteger()
 	constexpr unsigned int eof = EOF;
 
 	uint32_t n;
+	FILE* fd = fdPtr.get();
 	for (int i = 0; i < 4; ++i) {
 		unsigned int c;
 		require((c = fgetc(fd)) != eof);
@@ -294,6 +267,7 @@ Database<Entry>::FileStream::readEntryHeader()
 template <typename Entry>
 void Database<Entry>::FileStream::writeEntryData(const EntryData& entryData)
 {
+	FILE* fd = fdPtr.get();
 	const size_t nWritten = fwrite(entryData.data(), 1, entrySize, fd);
 	if (nWritten < entrySize) {
 		throw std::runtime_error("Failed to write entry");
@@ -304,6 +278,7 @@ void Database<Entry>::FileStream::writeEntryData(const EntryData& entryData)
 template <typename Entry>
 void Database<Entry>::FileStream::readEntryData(EntryData& entryData)
 {
+	FILE* fd = fdPtr.get();
 	const size_t nRead = fread(entryData.data(), 1, entrySize, fd);
 	if (nRead < entrySize) {
 		throw std::runtime_error("Failed to read entry");
@@ -413,7 +388,7 @@ template <typename Entry> void Database<Entry>::erase(ID id)
 	EntryData entryData;
 	const uint32_t entryCount = getEntryCount();
 	const uint32_t eraseIdx = getIdIndex(id);
-	FileStream copyStream(dbStream);
+	FileStream copyStream(dbStream.filepath);
 
 	dbStream.seekAtEntry(eraseIdx);
 	copyStream.seekAtEntry(eraseIdx);
@@ -437,7 +412,7 @@ void Database<Entry>::erase(const Result<Entry>& result)
 template <typename Entry> void Database<Entry>::erase(const Query<Entry>& query)
 {
 	EntryData entryData;
-	FileStream copyStream(dbStream);
+	FileStream copyStream(dbStream.filepath);
 
 	dbStream.seekAtEntry(0);
 	copyStream.seekAtEntry(0);
