@@ -1,11 +1,12 @@
 #ifndef TRANSPOSE_READER
 #define TRANSPOSE_READER
 
+
 #include <cstdint>
+
 
 namespace Transpose
 {
-
 class Reader
 {
       private:
@@ -27,12 +28,13 @@ class Reader
 	Reader& operator>>(uint64_t& val);
 };
 
+
 template <typename T> Reader& Reader::operator>>(T& val)
 {
 	val.readTranspose(*this);
 	return *this;
 }
-
 } // namespace Transpose
+
 
 #endif /* TRANSPOSE_READER */

@@ -1,6 +1,8 @@
 #include "writer.hpp"
 
+
 using std::size_t;
+
 
 template <typename UnsignedInteger>
 static constexpr void writeUnsignedInteger(unsigned char* data,
@@ -15,12 +17,14 @@ static constexpr void writeUnsignedInteger(unsigned char* data,
 	}
 }
 
+
 namespace Transpose
 {
-
 Writer::Writer(char* data) : data(reinterpret_cast<unsigned char*>(data)) {}
 
+
 Writer::Writer(unsigned char* data) : data(data) {}
+
 
 Writer& Writer::operator<<(char val)
 {
@@ -29,12 +33,14 @@ Writer& Writer::operator<<(char val)
 	return *this;
 }
 
+
 Writer& Writer::operator<<(int8_t val)
 {
 	writeUnsignedInteger<uint8_t>(data, val);
 	data += sizeof val;
 	return *this;
 }
+
 
 Writer& Writer::operator<<(int16_t val)
 {
@@ -43,12 +49,14 @@ Writer& Writer::operator<<(int16_t val)
 	return *this;
 }
 
+
 Writer& Writer::operator<<(int32_t val)
 {
 	writeUnsignedInteger<uint32_t>(data, val);
 	data += sizeof val;
 	return *this;
 }
+
 
 Writer& Writer::operator<<(int64_t val)
 {
@@ -57,12 +65,14 @@ Writer& Writer::operator<<(int64_t val)
 	return *this;
 }
 
+
 Writer& Writer::operator<<(uint8_t val)
 {
 	writeUnsignedInteger(data, val);
 	data += sizeof val;
 	return *this;
 }
+
 
 Writer& Writer::operator<<(uint16_t val)
 {
@@ -71,6 +81,7 @@ Writer& Writer::operator<<(uint16_t val)
 	return *this;
 }
 
+
 Writer& Writer::operator<<(uint32_t val)
 {
 	writeUnsignedInteger(data, val);
@@ -78,11 +89,11 @@ Writer& Writer::operator<<(uint32_t val)
 	return *this;
 }
 
+
 Writer& Writer::operator<<(uint64_t val)
 {
 	writeUnsignedInteger(data, val);
 	data += sizeof val;
 	return *this;
 }
-
 } // namespace Transpose

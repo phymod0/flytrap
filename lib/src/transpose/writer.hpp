@@ -1,11 +1,12 @@
 #ifndef TRANSPOSE_WRITER
 #define TRANSPOSE_WRITER
 
+
 #include <cstdint>
+
 
 namespace Transpose
 {
-
 class Writer
 {
       private:
@@ -27,12 +28,13 @@ class Writer
 	Writer& operator<<(uint64_t val);
 };
 
+
 template <typename T> Writer& Writer::operator<<(const T& val)
 {
 	val.writeTranspose(*this);
 	return *this;
 }
-
 } // namespace Transpose
+
 
 #endif /* TRANSPOSE_WRITER */

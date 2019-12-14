@@ -1,10 +1,12 @@
 #ifndef EDB_QUERY
 #define EDB_QUERY
 
+
 #include "common.hpp"
 
 #include <functional>
 #include <list>
+
 
 /* TODO:
  *      - Query iterators
@@ -13,11 +15,12 @@
  *      - Function composition instead of lists
  */
 
+
 namespace EDB
 {
-
 template <typename Entry> struct Result;
 template <typename Entry> class Database;
+
 
 template <typename Entry> class Query
 {
@@ -44,6 +47,7 @@ template <typename Entry> class Query
 	void erase();
 };
 
+
 template <typename Entry> bool Query<Entry>::keep(const Entry& entry)
 {
 	for (const KeepFn& keeper : keepers) {
@@ -53,6 +57,7 @@ template <typename Entry> bool Query<Entry>::keep(const Entry& entry)
 	}
 	return true;
 }
+
 
 template <typename Entry>
 int Query<Entry>::order(const Entry& left, const Entry& right)
@@ -67,12 +72,15 @@ int Query<Entry>::order(const Entry& left, const Entry& right)
 	return 0;
 }
 
+
 template <typename Entry> Query<Entry>::Query(Database<Entry> db) : db(db) {}
+
 
 template <typename Entry> bool Query<Entry>::includes(const Entry& entry)
 {
 	return keep(entry);
 }
+
 
 template <typename Entry> Query<Entry> Query<Entry>::filter(KeepFn keep)
 {
@@ -80,11 +88,13 @@ template <typename Entry> Query<Entry> Query<Entry>::filter(KeepFn keep)
 	return *this;
 }
 
+
 template <typename Entry> Query<Entry> Query<Entry>::sort(OrderFn order)
 {
 	orders.push_front(order);
 	return *this;
 }
+
 
 template <typename Entry> std::list<Result<Entry>> Query<Entry>::fetch()
 {
@@ -104,8 +114,9 @@ template <typename Entry> std::list<Result<Entry>> Query<Entry>::fetch()
 	return results;
 }
 
-template <typename Entry> void Query<Entry>::erase() { db.erase(*this); }
 
+template <typename Entry> void Query<Entry>::erase() { db.erase(*this); }
 } // namespace EDB
+
 
 #endif /* EDB_QUERY */

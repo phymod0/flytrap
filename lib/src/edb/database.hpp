@@ -1,6 +1,7 @@
 #ifndef EDB_DATABASE
 #define EDB_DATABASE
 
+
 /*
  * TODO:
  *      - Remove entrySize from the header or use for verification
@@ -19,6 +20,7 @@
  *	  possibly FileStream
  */
 
+
 #include "common.hpp"
 #include "query.hpp"
 #include "result.hpp"
@@ -27,13 +29,14 @@
 #include <memory>
 #include <string>
 
+
 namespace EDB
 {
-
 using CErrors::require;
 
 template <typename Entry> struct Result;
 template <typename Entry> class Query;
+
 
 template <typename Entry> class Database
 {
@@ -128,6 +131,7 @@ template <typename Entry> class Database
 	Query<Entry> query();
 };
 
+
 template <typename Entry>
 std::shared_ptr<FILE>
 Database<Entry>::FileStream::openFile(const std::string& filepath)
@@ -139,17 +143,20 @@ Database<Entry>::FileStream::openFile(const std::string& filepath)
 	return std::shared_ptr<FILE>(fd, fclose);
 }
 
+
 template <typename Entry> void Database<Entry>::FileStream::seekStart()
 {
 	FILE* fd = fdPtr.get();
 	require(fseek(fd, 0, SEEK_SET) == 0);
 }
 
+
 template <typename Entry> void Database<Entry>::FileStream::seekAt(long at)
 {
 	FILE* fd = fdPtr.get();
 	require(fseek(fd, at, SEEK_SET) == 0);
 }
+
 
 template <typename Entry>
 void Database<Entry>::FileStream::seekAtEntry(uint32_t entryIdx)
@@ -160,11 +167,13 @@ void Database<Entry>::FileStream::seekAtEntry(uint32_t entryIdx)
 	seekAt(entryPos);
 }
 
+
 template <typename Entry> void Database<Entry>::FileStream::seekEnd()
 {
 	FILE* fd = fdPtr.get();
 	require(fseek(fd, 0, SEEK_END) == 0);
 }
+
 
 template <typename Entry> long Database<Entry>::FileStream::currentPos()
 {
@@ -174,17 +183,20 @@ template <typename Entry> long Database<Entry>::FileStream::currentPos()
 	return result;
 }
 
+
 template <typename Entry> long Database<Entry>::FileStream::getFileSize()
 {
 	seekEnd();
 	return currentPos();
 }
 
+
 template <typename Entry>
 Database<Entry>::FileStream::FileStream(const std::string& filepath)
     : fdPtr(openFile(filepath)), filepath(filepath)
 {
 }
+
 
 template <typename Entry>
 void Database<Entry>::FileStream::writeInteger(uint32_t n)
@@ -199,6 +211,7 @@ void Database<Entry>::FileStream::writeInteger(uint32_t n)
 	}
 	require(fflush(fd) == 0);
 }
+
 
 template <typename Entry> uint32_t Database<Entry>::FileStream::readInteger()
 {
@@ -216,6 +229,7 @@ template <typename Entry> uint32_t Database<Entry>::FileStream::readInteger()
 	return n;
 }
 
+
 template <typename Entry>
 void Database<Entry>::FileStream::writeDBHeader(
     const Database<Entry>::DBHeader& header)
@@ -224,6 +238,7 @@ void Database<Entry>::FileStream::writeDBHeader(
 	writeInteger(header.entryCount);
 	writeInteger(header.entrySize);
 }
+
 
 template <typename Entry>
 typename Database<Entry>::DBHeader Database<Entry>::FileStream::readDBHeader()
@@ -235,6 +250,7 @@ typename Database<Entry>::DBHeader Database<Entry>::FileStream::readDBHeader()
 	return {entryCount, entrySize};
 }
 
+
 template <typename Entry>
 void Database<Entry>::FileStream::writeEntryCount(uint32_t entryCount)
 {
@@ -243,11 +259,13 @@ void Database<Entry>::FileStream::writeEntryCount(uint32_t entryCount)
 	writeDBHeader(dbHeader);
 }
 
+
 template <typename Entry> uint32_t Database<Entry>::FileStream::readEntryCount()
 {
 	DBHeader dbHeader = readDBHeader();
 	return dbHeader.entryCount;
 }
+
 
 template <typename Entry>
 void Database<Entry>::FileStream::writeEntryHeader(
@@ -256,6 +274,7 @@ void Database<Entry>::FileStream::writeEntryHeader(
 	writeInteger(header.entryId);
 }
 
+
 template <typename Entry>
 typename Database<Entry>::EntryHeader
 Database<Entry>::FileStream::readEntryHeader()
@@ -263,6 +282,7 @@ Database<Entry>::FileStream::readEntryHeader()
 	const ID entryId = readInteger();
 	return {entryId};
 }
+
 
 template <typename Entry>
 void Database<Entry>::FileStream::writeEntryData(const EntryData& entryData)
@@ -275,6 +295,7 @@ void Database<Entry>::FileStream::writeEntryData(const EntryData& entryData)
 	require(fflush(fd) == 0);
 }
 
+
 template <typename Entry>
 void Database<Entry>::FileStream::readEntryData(EntryData& entryData)
 {
@@ -285,10 +306,12 @@ void Database<Entry>::FileStream::readEntryData(EntryData& entryData)
 	}
 }
 
+
 template <typename Entry> bool Database<Entry>::dbFileInitialized()
 {
 	return dbStream.getFileSize() > 0;
 }
+
 
 template <typename Entry> void Database<Entry>::dbInitializeFile()
 {
@@ -296,22 +319,26 @@ template <typename Entry> void Database<Entry>::dbInitializeFile()
 	dbStream.writeDBHeader({entryCount, entrySize});
 }
 
+
 template <typename Entry> ID Database<Entry>::getEntryId(uint32_t entryIdx)
 {
 	dbStream.seekAtEntry(entryIdx);
 	return dbStream.readEntryHeader().entryId;
 }
 
+
 template <typename Entry> uint32_t Database<Entry>::getEntryCount()
 {
 	return dbStream.readEntryCount();
 }
+
 
 template <typename Entry>
 void Database<Entry>::setEntryCount(uint32_t entryCount)
 {
 	return dbStream.writeEntryCount(entryCount);
 }
+
 
 template <typename Entry> uint32_t Database<Entry>::getIdIndex(ID find)
 {
@@ -332,6 +359,7 @@ template <typename Entry> uint32_t Database<Entry>::getIdIndex(ID find)
 	throw std::runtime_error("ID not found in database");
 }
 
+
 template <typename Entry>
 Database<Entry>::Database(const std::string& filepath) : dbStream(filepath)
 {
@@ -339,6 +367,7 @@ Database<Entry>::Database(const std::string& filepath) : dbStream(filepath)
 		dbInitializeFile();
 	}
 }
+
 
 template <typename Entry> Result<Entry> Database<Entry>::get(ID id)
 {
@@ -350,6 +379,7 @@ template <typename Entry> Result<Entry> Database<Entry>::get(ID id)
 	return Result<Entry>(EDBDeserializer<Entry>(entryData.data()), id);
 }
 
+
 template <typename Entry> void Database<Entry>::put(const Result<Entry>& result)
 {
 	EntryData entryData;
@@ -360,6 +390,7 @@ template <typename Entry> void Database<Entry>::put(const Result<Entry>& result)
 	EDBSerializer<Entry>(result.data, entryData.data());
 	dbStream.writeEntryData(entryData);
 }
+
 
 template <typename Entry> ID Database<Entry>::putNew(const Entry& entry)
 {
@@ -383,6 +414,7 @@ template <typename Entry> ID Database<Entry>::putNew(const Entry& entry)
 	return newEntryId;
 }
 
+
 template <typename Entry> void Database<Entry>::erase(ID id)
 {
 	EntryData entryData;
@@ -403,11 +435,13 @@ template <typename Entry> void Database<Entry>::erase(ID id)
 	setEntryCount(entryCount - 1);
 }
 
+
 template <typename Entry>
 void Database<Entry>::erase(const Result<Entry>& result)
 {
 	erase(result.id);
 }
+
 
 template <typename Entry> void Database<Entry>::erase(const Query<Entry>& query)
 {
@@ -432,22 +466,26 @@ template <typename Entry> void Database<Entry>::erase(const Query<Entry>& query)
 	setEntryCount(entryCount - nDeleted);
 }
 
+
 template <typename Entry>
 bool Database<Entry>::iterator::isEntryIdxValid(uint32_t entryIdx)
 {
 	return entryIdx < db.getEntryCount();
 }
 
+
 template <typename Entry> void Database<Entry>::iterator::end()
 {
 	ended = true;
 }
+
 
 template <typename Entry>
 Database<Entry>::iterator::iterator(Database<Entry>& db)
     : db(db), entryIdx(0), ended(false)
 {
 }
+
 
 template <typename Entry>
 typename Database<Entry>::iterator& Database<Entry>::iterator::operator++()
@@ -457,6 +495,7 @@ typename Database<Entry>::iterator& Database<Entry>::iterator::operator++()
 	}
 	return *this;
 }
+
 
 template <typename Entry>
 const typename Database<Entry>::iterator
@@ -468,6 +507,7 @@ Database<Entry>::iterator::operator++(int)
 	}
 	return prev;
 }
+
 
 template <typename Entry> Result<Entry> Database<Entry>::iterator::operator*()
 {
@@ -484,6 +524,7 @@ template <typename Entry> Result<Entry> Database<Entry>::iterator::operator*()
 			     entryHeader.entryId);
 }
 
+
 template <typename Entry>
 bool Database<Entry>::iterator::operator==(const Database<Entry>::iterator& it)
 {
@@ -491,17 +532,20 @@ bool Database<Entry>::iterator::operator==(const Database<Entry>::iterator& it)
 	       (ended or entryIdx == it.entryIdx);
 }
 
+
 template <typename Entry>
 bool Database<Entry>::iterator::operator!=(const Database<Entry>::iterator& it)
 {
 	return not operator==(it);
 }
 
+
 template <typename Entry>
 typename Database<Entry>::iterator Database<Entry>::begin()
 {
 	return iterator(*this);
 }
+
 
 template <typename Entry>
 typename Database<Entry>::iterator Database<Entry>::end()
@@ -511,11 +555,12 @@ typename Database<Entry>::iterator Database<Entry>::end()
 	return it;
 }
 
+
 template <typename Entry> Query<Entry> Database<Entry>::query()
 {
 	return Query<Entry>(*this);
 }
-
 } // namespace EDB
+
 
 #endif /* EDB_DATABASE */

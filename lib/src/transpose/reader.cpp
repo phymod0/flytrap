@@ -1,6 +1,8 @@
 #include "reader.hpp"
 
+
 using std::size_t;
+
 
 template <typename UnsignedInteger>
 static constexpr UnsignedInteger readUnsignedInteger(const unsigned char* data)
@@ -16,15 +18,17 @@ static constexpr UnsignedInteger readUnsignedInteger(const unsigned char* data)
 	return val;
 }
 
+
 namespace Transpose
 {
-
 Reader::Reader(const char* data)
     : data(reinterpret_cast<const unsigned char*>(data))
 {
 }
 
+
 Reader::Reader(const unsigned char* data) : data(data) {}
+
 
 Reader& Reader::operator>>(char& val)
 {
@@ -33,12 +37,14 @@ Reader& Reader::operator>>(char& val)
 	return *this;
 }
 
+
 Reader& Reader::operator>>(int8_t& val)
 {
 	val = readUnsignedInteger<uint8_t>(data);
 	data += sizeof val;
 	return *this;
 }
+
 
 Reader& Reader::operator>>(int16_t& val)
 {
@@ -47,12 +53,14 @@ Reader& Reader::operator>>(int16_t& val)
 	return *this;
 }
 
+
 Reader& Reader::operator>>(int32_t& val)
 {
 	val = readUnsignedInteger<uint32_t>(data);
 	data += sizeof val;
 	return *this;
 }
+
 
 Reader& Reader::operator>>(int64_t& val)
 {
@@ -61,12 +69,14 @@ Reader& Reader::operator>>(int64_t& val)
 	return *this;
 }
 
+
 Reader& Reader::operator>>(uint8_t& val)
 {
 	val = readUnsignedInteger<uint8_t>(data);
 	data += sizeof val;
 	return *this;
 }
+
 
 Reader& Reader::operator>>(uint16_t& val)
 {
@@ -75,6 +85,7 @@ Reader& Reader::operator>>(uint16_t& val)
 	return *this;
 }
 
+
 Reader& Reader::operator>>(uint32_t& val)
 {
 	val = readUnsignedInteger<uint32_t>(data);
@@ -82,11 +93,11 @@ Reader& Reader::operator>>(uint32_t& val)
 	return *this;
 }
 
+
 Reader& Reader::operator>>(uint64_t& val)
 {
 	val = readUnsignedInteger<uint64_t>(data);
 	data += sizeof val;
 	return *this;
 }
-
 } // namespace Transpose
