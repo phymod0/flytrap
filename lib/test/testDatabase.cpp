@@ -2,8 +2,7 @@
 //////////////////// INCLUDE FILES TO TEST BELOW ////////////////////
 /////////////////////////////////////////////////////////////////////
 
-#include "../src/edb/database.hpp"
-#include "../src/edb/result.hpp"
+#include "../src/edb/edb.hpp"
 #include "../src/transpose/reader.cpp"
 #include "../src/transpose/reader.hpp"
 #include "../src/transpose/writer.cpp"

@@ -2,6 +2,11 @@
 #define EDB_COMMON
 
 
+#ifndef INCLUDED_BY_EDB
+#error Do not include common.hpp directly
+#endif /* INCLUDED_BY_EDB */
+
+
 #include "utils/require.hpp"
 #include <cstdint>
 

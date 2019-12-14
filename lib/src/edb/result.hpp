@@ -2,6 +2,11 @@
 #define EDB_RESULT
 
 
+#ifndef INCLUDED_BY_EDB
+#error Do not include result.hpp directly
+#endif /* INCLUDED_BY_EDB */
+
+
 #include "common.hpp"
 
 

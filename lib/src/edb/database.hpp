@@ -2,6 +2,11 @@
 #define EDB_DATABASE
 
 
+#ifndef INCLUDED_BY_EDB
+#error Do not include database.hpp directly
+#endif /* INCLUDED_BY_EDB */
+
+
 /*
  * TODO:
  *      - Remove entrySize from the header or use for verification

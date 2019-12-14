@@ -2,6 +2,11 @@
 #define EDB_QUERY
 
 
+#ifndef INCLUDED_BY_EDB
+#error Do not include query.hpp directly
+#endif /* INCLUDED_BY_EDB */
+
+
 #include "common.hpp"
 
 #include <functional>
