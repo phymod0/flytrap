@@ -1,2 +1,2 @@
 # flytrap
-Captive portal-based phishing framework
+Captive portal implementation for phishing attacks
