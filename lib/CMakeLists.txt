@@ -4,6 +4,7 @@ add_library(flytrap
     STATIC
     src/transpose/writer.cpp
     src/transpose/reader.cpp
+    src/utils/logger.c
 )
 
 add_custom_target(test
