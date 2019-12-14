@@ -10,11 +10,14 @@ add_custom_target(test
     COMMAND cd ../../lib/test && make check
 )
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 if(MSVC)
-	target_compile_options(flytrap PRIVATE /W4 /WX)
+	set(CMAKE_C_FLAGS "/W4 /WX")
+	set(CMAKE_CXX_FLAGS "/W4 /WX")
 else()
-	target_compile_options(flytrap PRIVATE
-		-Wall -Wextra -Werror -std=c++17 -pedantic -O3)
+	set(CMAKE_C_FLAGS "-Wall -Wextra -Werror -std=c11 -pedantic -O3")
+	set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -std=c++17 -pedantic -O3")
 endif()
 
 check_type_size("uintmax_t" MAX_UINT_SIZE)
