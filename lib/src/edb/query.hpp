@@ -24,7 +24,7 @@
 namespace EDB
 {
 template <typename Entry> struct Result;
-template <typename Entry> class Database;
+template <typename Entry> class DatabaseHandle;
 
 
 template <typename Entry> class Query
@@ -33,7 +33,7 @@ template <typename Entry> class Query
 	using KeepFn = std::function<bool(const Entry&)>;
 	using OrderFn = std::function<int(const Entry&, const Entry&)>;
 
-	explicit Query(Database<Entry> db);
+	explicit Query(DatabaseHandle<Entry> db);
 
 	bool includes(const Entry& entry);
 
@@ -44,7 +44,7 @@ template <typename Entry> class Query
 	void erase();
 
       private:
-	Database<Entry> db;
+	DatabaseHandle<Entry> db;
 	std::list<KeepFn> keepers;
 	std::list<OrderFn> orders;
 	bool keep(const Entry& entry);
@@ -52,7 +52,7 @@ template <typename Entry> class Query
 };
 
 
-template <typename Entry> Query<Entry>::Query(Database<Entry> db) : db(db) {}
+template <typename Entry> Query<Entry>::Query(DatabaseHandle<Entry> db) : db(db) {}
 
 
 template <typename Entry> bool Query<Entry>::includes(const Entry& entry)

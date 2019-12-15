@@ -54,10 +54,10 @@ template <> constexpr size_t EDBSize<HelloWorld>()
 	       sizeof(int) + 5 * sizeof(char);
 }
 
-EDB::Database<HelloWorld> createRandomDatabase(const std::string& dbPath)
+EDB::DatabaseHandle<HelloWorld> createRandomDatabase(const std::string& dbPath)
 {
 	const size_t size = getRandom<size_t>(10, 1000);
-	EDB::Database<HelloWorld> db(dbPath);
+	EDB::DatabaseHandle<HelloWorld> db(dbPath);
 
 	srand(getpid());
 
@@ -96,7 +96,7 @@ TEST_DEFINE(databaseEntryInclusion, result)
 	TEST_AUTONAME(result);
 
 	const std::string filename = "helloworld.db";
-	EDB::Database<HelloWorld> db = createRandomDatabase(filename);
+	EDB::DatabaseHandle<HelloWorld> db = createRandomDatabase(filename);
 
 	const EDB::Query<HelloWorld>::KeepFn filterFn =
 	    [](const HelloWorld& hw) -> bool {
@@ -131,7 +131,7 @@ TEST_DEFINE(databaseEntryFilter, result)
 	TEST_AUTONAME(result);
 
 	const std::string filename = "helloworld.db";
-	EDB::Database<HelloWorld> db = createRandomDatabase(filename);
+	EDB::DatabaseHandle<HelloWorld> db = createRandomDatabase(filename);
 
 	const EDB::Query<HelloWorld>::KeepFn filterFn1 =
 	    [](const HelloWorld& hw) -> bool {
@@ -176,7 +176,7 @@ TEST_DEFINE(databaseEntrySort, result)
 	TEST_AUTONAME(result);
 
 	const std::string filename = "helloworld.db";
-	EDB::Database<HelloWorld> db = createRandomDatabase(filename);
+	EDB::DatabaseHandle<HelloWorld> db = createRandomDatabase(filename);
 
 	const EDB::Query<HelloWorld>::OrderFn order1 =
 	    [](const HelloWorld& hwl, const HelloWorld& hwr) -> int {

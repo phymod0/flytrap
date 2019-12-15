@@ -74,7 +74,7 @@ TEST_DEFINE(createNewDatabase, result)
 
 	const std::string filename = "helloworld.db";
 
-	EDB::Database<HelloWorld> db(filename);
+	EDB::DatabaseHandle<HelloWorld> db(filename);
 	FILE* fd = fopen(filename.c_str(), "rb");
 	uint32_t initialEntryCount = readStreamUint32(fd),
 		 entrySize = readStreamUint32(fd);
@@ -99,14 +99,14 @@ TEST_DEFINE(doNotOverwriteExistingDatabase, result)
 	const std::string filename = "helloworld.db";
 
 	try {
-		EDB::Database<HelloWorld> db(filename);
+		EDB::DatabaseHandle<HelloWorld> db(filename);
 		HelloWorld hw;
 		db.putNew(hw);
 	} catch (const std::exception& e) {
 		std::cout << "Got exception: " << e.what() << std::endl;
 	}
 
-	EDB::Database<HelloWorld> db(filename);
+	EDB::DatabaseHandle<HelloWorld> db(filename);
 	FILE* fd = fopen(filename.c_str(), "rb");
 	long fileSize = (fseek(fd, 0, SEEK_END), ftell(fd));
 	long expectedFileSize = 3 * sizeof(uint32_t) + EDBSize<HelloWorld>();
@@ -127,7 +127,7 @@ TEST_DEFINE(putNewAndGet, result)
 	{
 		const size_t size = getRandom<size_t>(10, 1000);
 
-		EDB::Database<HelloWorld> db(filename);
+		EDB::DatabaseHandle<HelloWorld> db(filename);
 
 		srand(getpid());
 
@@ -188,7 +188,7 @@ TEST_DEFINE(databaseGetAndPut, result)
 	{
 		const size_t size = getRandom<size_t>(10, 1000);
 
-		EDB::Database<HelloWorld> db(filename);
+		EDB::DatabaseHandle<HelloWorld> db(filename);
 
 		srand(getpid());
 
@@ -259,7 +259,7 @@ TEST_DEFINE(databaseErase, result)
 	{
 		const size_t size = getRandom<size_t>(10, 1000);
 
-		EDB::Database<HelloWorld> db(filename);
+		EDB::DatabaseHandle<HelloWorld> db(filename);
 
 		srand(getpid());
 
@@ -351,7 +351,7 @@ TEST_DEFINE(databaseIteration, result)
 	{
 		const size_t size = getRandom<size_t>(10, 1000);
 
-		EDB::Database<HelloWorld> db(filename);
+		EDB::DatabaseHandle<HelloWorld> db(filename);
 
 		srand(getpid());
 
