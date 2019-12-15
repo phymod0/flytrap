@@ -9,9 +9,6 @@ namespace Transpose
 {
 class Reader
 {
-      private:
-	const unsigned char* data;
-
       public:
 	explicit Reader(const char* data);
 	explicit Reader(const unsigned char* data);
@@ -26,6 +23,9 @@ class Reader
 	Reader& operator>>(uint16_t& val);
 	Reader& operator>>(uint32_t& val);
 	Reader& operator>>(uint64_t& val);
+
+      private:
+	const unsigned char* data;
 };
 
 

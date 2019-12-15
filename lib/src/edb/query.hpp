@@ -33,14 +33,6 @@ template <typename Entry> class Query
 	using KeepFn = std::function<bool(const Entry&)>;
 	using OrderFn = std::function<int(const Entry&, const Entry&)>;
 
-      private:
-	Database<Entry> db;
-	std::list<KeepFn> keepers;
-	std::list<OrderFn> orders;
-	bool keep(const Entry& entry);
-	int order(const Entry& left, const Entry& right);
-
-      public:
 	explicit Query(Database<Entry> db);
 
 	bool includes(const Entry& entry);
@@ -50,32 +42,14 @@ template <typename Entry> class Query
 
 	std::list<Result<Entry>> fetch();
 	void erase();
+
+      private:
+	Database<Entry> db;
+	std::list<KeepFn> keepers;
+	std::list<OrderFn> orders;
+	bool keep(const Entry& entry);
+	int order(const Entry& left, const Entry& right);
 };
-
-
-template <typename Entry> bool Query<Entry>::keep(const Entry& entry)
-{
-	for (const KeepFn& keeper : keepers) {
-		if (not keeper(entry)) {
-			return false;
-		}
-	}
-	return true;
-}
-
-
-template <typename Entry>
-int Query<Entry>::order(const Entry& left, const Entry& right)
-{
-	for (const OrderFn& suborder : orders) {
-		int ord = suborder(left, right);
-		if (ord == 0) {
-			continue;
-		}
-		return ord;
-	}
-	return 0;
-}
 
 
 template <typename Entry> Query<Entry>::Query(Database<Entry> db) : db(db) {}
@@ -121,6 +95,31 @@ template <typename Entry> std::list<Result<Entry>> Query<Entry>::fetch()
 
 
 template <typename Entry> void Query<Entry>::erase() { db.erase(*this); }
+
+
+template <typename Entry> bool Query<Entry>::keep(const Entry& entry)
+{
+	for (const KeepFn& keeper : keepers) {
+		if (not keeper(entry)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+template <typename Entry>
+int Query<Entry>::order(const Entry& left, const Entry& right)
+{
+	for (const OrderFn& suborder : orders) {
+		int ord = suborder(left, right);
+		if (ord == 0) {
+			continue;
+		}
+		return ord;
+	}
+	return 0;
+}
 } // namespace EDB
 
 

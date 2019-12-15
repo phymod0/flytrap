@@ -9,9 +9,6 @@ namespace Transpose
 {
 class Writer
 {
-      private:
-	unsigned char* data;
-
       public:
 	explicit Writer(char* data);
 	explicit Writer(unsigned char* data);
@@ -26,6 +23,9 @@ class Writer
 	Writer& operator<<(uint16_t val);
 	Writer& operator<<(uint32_t val);
 	Writer& operator<<(uint64_t val);
+
+      private:
+	unsigned char* data;
 };
 
 

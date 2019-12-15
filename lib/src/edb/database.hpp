@@ -45,6 +45,41 @@ template <typename Entry> class Query;
 
 template <typename Entry> class Database
 {
+      public:
+	explicit Database(const std::string& filepath);
+
+	Result<Entry> get(ID id);
+	void put(const Result<Entry>& result);
+	ID putNew(const Entry& entry);
+	void erase(ID id);
+	void erase(const Result<Entry>& result);
+	void erase(const Query<Entry>& query);
+
+	class iterator
+	{
+		friend class Database;
+
+	      public:
+		explicit iterator(Database<Entry>& db);
+		iterator& operator++();
+		const iterator operator++(int);
+		Result<Entry> operator*();
+		bool operator==(const iterator& it);
+		bool operator!=(const iterator& it);
+
+	      private:
+		Database<Entry>& db;
+		uint32_t entryIdx;
+		bool ended;
+		bool isEntryIdxValid(uint32_t entryIdx);
+		void end();
+	};
+	iterator begin();
+	iterator end();
+	friend class iterator;
+
+	Query<Entry> query();
+
       private:
 	static constexpr size_t dbHeaderSize = 8;
 	using DBHeader = struct {
@@ -62,12 +97,6 @@ template <typename Entry> class Database
 	class FileStream
 	{
 		friend class Database;
-
-	      private:
-		std::shared_ptr<FILE> openFile(const std::string& filepath);
-
-		std::shared_ptr<FILE> fdPtr;
-		std::string filepath;
 
 	      public:
 		void seekStart();
@@ -89,6 +118,12 @@ template <typename Entry> class Database
 		EntryHeader readEntryHeader();
 		void writeEntryData(const EntryData& entryData);
 		void readEntryData(EntryData& entryData);
+
+	      private:
+		std::shared_ptr<FILE> openFile(const std::string& filepath);
+
+		std::shared_ptr<FILE> fdPtr;
+		std::string filepath;
 	};
 
 	FileStream dbStream;
@@ -99,270 +134,7 @@ template <typename Entry> class Database
 	uint32_t getEntryCount();
 	void setEntryCount(uint32_t entryCount);
 	uint32_t getIdIndex(ID find);
-
-      public:
-	explicit Database(const std::string& filepath);
-
-	Result<Entry> get(ID id);
-	void put(const Result<Entry>& result);
-	ID putNew(const Entry& entry);
-	void erase(ID id);
-	void erase(const Result<Entry>& result);
-	void erase(const Query<Entry>& query);
-
-	class iterator
-	{
-		friend class Database;
-
-	      private:
-		Database<Entry>& db;
-		uint32_t entryIdx;
-		bool ended;
-		bool isEntryIdxValid(uint32_t entryIdx);
-		void end();
-
-	      public:
-		explicit iterator(Database<Entry>& db);
-		iterator& operator++();
-		const iterator operator++(int);
-		Result<Entry> operator*();
-		bool operator==(const iterator& it);
-		bool operator!=(const iterator& it);
-	};
-	iterator begin();
-	iterator end();
-	friend class iterator;
-
-	Query<Entry> query();
 };
-
-
-template <typename Entry>
-std::shared_ptr<FILE>
-Database<Entry>::FileStream::openFile(const std::string& filepath)
-{
-	FILE* fd;
-	require((fd = fopen(filepath.c_str(), "ab")) != NULL);   // NOLINT
-	fclose(fd);                                              // NOLINT
-	require((fd = fopen(filepath.c_str(), "re+b")) != NULL); // NOLINT
-	return std::shared_ptr<FILE>(fd, fclose);
-}
-
-
-template <typename Entry> void Database<Entry>::FileStream::seekStart()
-{
-	FILE* fd = fdPtr.get();
-	require(fseek(fd, 0, SEEK_SET) == 0);
-}
-
-
-template <typename Entry> void Database<Entry>::FileStream::seekAt(long at)
-{
-	FILE* fd = fdPtr.get();
-	require(fseek(fd, at, SEEK_SET) == 0);
-}
-
-
-template <typename Entry>
-void Database<Entry>::FileStream::seekAtEntry(uint32_t entryIdx)
-{
-	constexpr size_t entryBlockSize = entryHeaderSize + entrySize;
-	constexpr size_t headerSize = dbHeaderSize;
-	const long entryPos = headerSize + entryBlockSize * entryIdx;
-	seekAt(entryPos);
-}
-
-
-template <typename Entry> void Database<Entry>::FileStream::seekEnd()
-{
-	FILE* fd = fdPtr.get();
-	require(fseek(fd, 0, SEEK_END) == 0);
-}
-
-
-template <typename Entry> long Database<Entry>::FileStream::currentPos()
-{
-	long result;
-	FILE* fd = fdPtr.get();
-	require((result = ftell(fd)) >= 0);
-	return result;
-}
-
-
-template <typename Entry> long Database<Entry>::FileStream::getFileSize()
-{
-	seekEnd();
-	return currentPos();
-}
-
-
-template <typename Entry>
-Database<Entry>::FileStream::FileStream(const std::string& filepath)
-    : fdPtr(openFile(filepath)), filepath(filepath)
-{
-}
-
-
-template <typename Entry>
-void Database<Entry>::FileStream::writeInteger(uint32_t n)
-{
-	constexpr uint32_t byteMask = 0xFF;
-	constexpr unsigned int byteShift = 8;
-
-	FILE* fd = fdPtr.get();
-	for (int i = 0; i < 4; ++i) {
-		require(fputc(n & byteMask, fd) != EOF);
-		n >>= byteShift;
-	}
-	require(fflush(fd) == 0);
-}
-
-
-template <typename Entry> uint32_t Database<Entry>::FileStream::readInteger()
-{
-	constexpr unsigned int byteShift = 8;
-	constexpr unsigned int tailShift = 24;
-	constexpr unsigned int eof = EOF;
-
-	uint32_t n;
-	FILE* fd = fdPtr.get();
-	for (int i = 0; i < 4; ++i) {
-		unsigned int c;
-		require((c = fgetc(fd)) != eof);
-		n = (n >> byteShift) | (c << tailShift);
-	}
-	return n;
-}
-
-
-template <typename Entry>
-void Database<Entry>::FileStream::writeDBHeader(
-    const Database<Entry>::DBHeader& header)
-{
-	seekStart();
-	writeInteger(header.entryCount);
-	writeInteger(header.entrySize);
-}
-
-
-template <typename Entry>
-typename Database<Entry>::DBHeader Database<Entry>::FileStream::readDBHeader()
-{
-	seekStart();
-	const uint32_t entryCount = readInteger();
-	const uint32_t entrySize = readInteger();
-
-	return {entryCount, entrySize};
-}
-
-
-template <typename Entry>
-void Database<Entry>::FileStream::writeEntryCount(uint32_t entryCount)
-{
-	DBHeader dbHeader = readDBHeader();
-	dbHeader.entryCount = entryCount;
-	writeDBHeader(dbHeader);
-}
-
-
-template <typename Entry> uint32_t Database<Entry>::FileStream::readEntryCount()
-{
-	DBHeader dbHeader = readDBHeader();
-	return dbHeader.entryCount;
-}
-
-
-template <typename Entry>
-void Database<Entry>::FileStream::writeEntryHeader(
-    const Database<Entry>::EntryHeader& header)
-{
-	writeInteger(header.entryId);
-}
-
-
-template <typename Entry>
-typename Database<Entry>::EntryHeader
-Database<Entry>::FileStream::readEntryHeader()
-{
-	const ID entryId = readInteger();
-	return {entryId};
-}
-
-
-template <typename Entry>
-void Database<Entry>::FileStream::writeEntryData(const EntryData& entryData)
-{
-	FILE* fd = fdPtr.get();
-	const size_t nWritten = fwrite(entryData.data(), 1, entrySize, fd);
-	if (nWritten < entrySize) {
-		throw std::runtime_error("Failed to write entry");
-	}
-	require(fflush(fd) == 0);
-}
-
-
-template <typename Entry>
-void Database<Entry>::FileStream::readEntryData(EntryData& entryData)
-{
-	FILE* fd = fdPtr.get();
-	const size_t nRead = fread(entryData.data(), 1, entrySize, fd);
-	if (nRead < entrySize) {
-		throw std::runtime_error("Failed to read entry");
-	}
-}
-
-
-template <typename Entry> bool Database<Entry>::dbFileInitialized()
-{
-	return dbStream.getFileSize() > 0;
-}
-
-
-template <typename Entry> void Database<Entry>::dbInitializeFile()
-{
-	constexpr uint32_t entryCount = 0;
-	dbStream.writeDBHeader({entryCount, entrySize});
-}
-
-
-template <typename Entry> ID Database<Entry>::getEntryId(uint32_t entryIdx)
-{
-	dbStream.seekAtEntry(entryIdx);
-	return dbStream.readEntryHeader().entryId;
-}
-
-
-template <typename Entry> uint32_t Database<Entry>::getEntryCount()
-{
-	return dbStream.readEntryCount();
-}
-
-
-template <typename Entry>
-void Database<Entry>::setEntryCount(uint32_t entryCount)
-{
-	return dbStream.writeEntryCount(entryCount);
-}
-
-
-template <typename Entry> uint32_t Database<Entry>::getIdIndex(ID find)
-{
-	uint32_t s = 0;
-	uint32_t e = getEntryCount();
-	while (e - s > 1) {
-		const uint32_t m = (s + e) / 2;
-		const ID id = getEntryId(m);
-		if (find < id) {
-			e = m;
-		} else {
-			s = m;
-		}
-	}
-	if (getEntryId(s) == find) {
-		return s;
-	}
-	throw std::runtime_error("ID not found in database");
-}
 
 
 template <typename Entry>
@@ -473,19 +245,6 @@ template <typename Entry> void Database<Entry>::erase(const Query<Entry>& query)
 
 
 template <typename Entry>
-bool Database<Entry>::iterator::isEntryIdxValid(uint32_t entryIdx)
-{
-	return entryIdx < db.getEntryCount();
-}
-
-
-template <typename Entry> void Database<Entry>::iterator::end()
-{
-	ended = true;
-}
-
-
-template <typename Entry>
 Database<Entry>::iterator::iterator(Database<Entry>& db)
     : db(db), entryIdx(0), ended(false)
 {
@@ -546,6 +305,19 @@ bool Database<Entry>::iterator::operator!=(const Database<Entry>::iterator& it)
 
 
 template <typename Entry>
+bool Database<Entry>::iterator::isEntryIdxValid(uint32_t entryIdx)
+{
+	return entryIdx < db.getEntryCount();
+}
+
+
+template <typename Entry> void Database<Entry>::iterator::end()
+{
+	ended = true;
+}
+
+
+template <typename Entry>
 typename Database<Entry>::iterator Database<Entry>::begin()
 {
 	return iterator(*this);
@@ -564,6 +336,235 @@ typename Database<Entry>::iterator Database<Entry>::end()
 template <typename Entry> Query<Entry> Database<Entry>::query()
 {
 	return Query<Entry>(*this);
+}
+
+
+template <typename Entry> void Database<Entry>::FileStream::seekStart()
+{
+	FILE* fd = fdPtr.get();
+	require(fseek(fd, 0, SEEK_SET) == 0);
+}
+
+
+template <typename Entry> void Database<Entry>::FileStream::seekAt(long at)
+{
+	FILE* fd = fdPtr.get();
+	require(fseek(fd, at, SEEK_SET) == 0);
+}
+
+
+template <typename Entry>
+void Database<Entry>::FileStream::seekAtEntry(uint32_t entryIdx)
+{
+	constexpr size_t entryBlockSize = entryHeaderSize + entrySize;
+	constexpr size_t headerSize = dbHeaderSize;
+	const long entryPos = headerSize + entryBlockSize * entryIdx;
+	seekAt(entryPos);
+}
+
+
+template <typename Entry> void Database<Entry>::FileStream::seekEnd()
+{
+	FILE* fd = fdPtr.get();
+	require(fseek(fd, 0, SEEK_END) == 0);
+}
+
+
+template <typename Entry> long Database<Entry>::FileStream::currentPos()
+{
+	long result;
+	FILE* fd = fdPtr.get();
+	require((result = ftell(fd)) >= 0);
+	return result;
+}
+
+
+template <typename Entry> long Database<Entry>::FileStream::getFileSize()
+{
+	seekEnd();
+	return currentPos();
+}
+
+
+template <typename Entry>
+Database<Entry>::FileStream::FileStream(const std::string& filepath)
+    : fdPtr(openFile(filepath)), filepath(filepath)
+{
+}
+
+
+template <typename Entry>
+void Database<Entry>::FileStream::writeInteger(uint32_t n)
+{
+	constexpr uint32_t byteMask = 0xFF;
+	constexpr unsigned int byteShift = 8;
+
+	FILE* fd = fdPtr.get();
+	for (int i = 0; i < 4; ++i) {
+		const int c = static_cast<int>(n & byteMask);
+		require(fputc(c, fd) != EOF);
+		n >>= byteShift;
+	}
+	require(fflush(fd) == 0);
+}
+
+
+template <typename Entry> uint32_t Database<Entry>::FileStream::readInteger()
+{
+	constexpr unsigned int byteShift = 8;
+	constexpr unsigned int tailShift = 24;
+	constexpr unsigned int eof = EOF;
+
+	uint32_t n;
+	FILE* fd = fdPtr.get();
+	for (int i = 0; i < 4; ++i) {
+		unsigned int c;
+		require((c = fgetc(fd)) != eof);
+		n = (n >> byteShift) | (c << tailShift);
+	}
+	return n;
+}
+
+
+template <typename Entry>
+void Database<Entry>::FileStream::writeDBHeader(
+    const Database<Entry>::DBHeader& header)
+{
+	seekStart();
+	writeInteger(header.entryCount);
+	writeInteger(header.entrySize);
+}
+
+
+template <typename Entry>
+typename Database<Entry>::DBHeader Database<Entry>::FileStream::readDBHeader()
+{
+	seekStart();
+	const uint32_t entryCount = readInteger();
+	const uint32_t entrySize = readInteger();
+
+	return {entryCount, entrySize};
+}
+
+
+template <typename Entry>
+void Database<Entry>::FileStream::writeEntryCount(uint32_t entryCount)
+{
+	DBHeader dbHeader = readDBHeader();
+	dbHeader.entryCount = entryCount;
+	writeDBHeader(dbHeader);
+}
+
+
+template <typename Entry> uint32_t Database<Entry>::FileStream::readEntryCount()
+{
+	DBHeader dbHeader = readDBHeader();
+	return dbHeader.entryCount;
+}
+
+
+template <typename Entry>
+void Database<Entry>::FileStream::writeEntryHeader(
+    const Database<Entry>::EntryHeader& header)
+{
+	writeInteger(header.entryId);
+}
+
+
+template <typename Entry>
+typename Database<Entry>::EntryHeader
+Database<Entry>::FileStream::readEntryHeader()
+{
+	const ID entryId = readInteger();
+	return {entryId};
+}
+
+
+template <typename Entry>
+void Database<Entry>::FileStream::writeEntryData(const EntryData& entryData)
+{
+	FILE* fd = fdPtr.get();
+	const size_t nWritten = fwrite(entryData.data(), 1, entrySize, fd);
+	if (nWritten < entrySize) {
+		throw std::runtime_error("Failed to write entry");
+	}
+	require(fflush(fd) == 0);
+}
+
+
+template <typename Entry>
+void Database<Entry>::FileStream::readEntryData(EntryData& entryData)
+{
+	FILE* fd = fdPtr.get();
+	const size_t nRead = fread(entryData.data(), 1, entrySize, fd);
+	if (nRead < entrySize) {
+		throw std::runtime_error("Failed to read entry");
+	}
+}
+
+
+template <typename Entry>
+std::shared_ptr<FILE>
+Database<Entry>::FileStream::openFile(const std::string& filepath)
+{
+	FILE* fd;
+	require((fd = fopen(filepath.c_str(), "ab")) != NULL);   // NOLINT
+	fclose(fd);                                              // NOLINT
+	require((fd = fopen(filepath.c_str(), "re+b")) != NULL); // NOLINT
+	return std::shared_ptr<FILE>(fd, fclose);
+}
+
+
+template <typename Entry> bool Database<Entry>::dbFileInitialized()
+{
+	return dbStream.getFileSize() > 0;
+}
+
+
+template <typename Entry> void Database<Entry>::dbInitializeFile()
+{
+	constexpr uint32_t entryCount = 0;
+	dbStream.writeDBHeader({entryCount, entrySize});
+}
+
+
+template <typename Entry> ID Database<Entry>::getEntryId(uint32_t entryIdx)
+{
+	dbStream.seekAtEntry(entryIdx);
+	return dbStream.readEntryHeader().entryId;
+}
+
+
+template <typename Entry> uint32_t Database<Entry>::getEntryCount()
+{
+	return dbStream.readEntryCount();
+}
+
+
+template <typename Entry>
+void Database<Entry>::setEntryCount(uint32_t entryCount)
+{
+	return dbStream.writeEntryCount(entryCount);
+}
+
+
+template <typename Entry> uint32_t Database<Entry>::getIdIndex(ID find)
+{
+	uint32_t s = 0;
+	uint32_t e = getEntryCount();
+	while (e - s > 1) {
+		const uint32_t m = (s + e) / 2;
+		const ID id = getEntryId(m);
+		if (find < id) {
+			e = m;
+		} else {
+			s = m;
+		}
+	}
+	if (getEntryId(s) == find) {
+		return s;
+	}
+	throw std::runtime_error("ID not found in database");
 }
 } // namespace EDB
 
