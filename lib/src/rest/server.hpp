@@ -23,9 +23,12 @@ class Server
 	Server(std::string ip, int port);
 	void start();
 	void stop();
-	void addEventBase(EventBase evBase);
+	void addEventBase(const EventBase& evBase);
 
       private:
+	std::string ip;
+	int port;
+	// TODO(phymod0): Add trie mapping endpoints to (method, handler) pairs
 };
 } // namespace REST
 
