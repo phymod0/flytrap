@@ -4,6 +4,7 @@
 
 #include <string>
 
+#include "../tree/tree.hpp"
 #include "defs.hpp"
 #include "eventBase.hpp"
 #include "request.hpp"
@@ -28,7 +29,7 @@ class Server
       private:
 	std::string ip;
 	int port;
-	// TODO(phymod0): Add trie mapping endpoints to (method, handler) pairs
+	Tree<std::string, EventBase::RouteOps> handlers;
 };
 } // namespace REST
 

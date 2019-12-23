@@ -14,6 +14,7 @@ enum class HTTPMethod {
 	PUT,
 	POST,
 	DELETE,
+	N_SUPPORTED_METHODS,
 };
 
 enum class HTTPStatus {

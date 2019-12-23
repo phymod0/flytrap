@@ -21,13 +21,13 @@ EventBase::~EventBase() = default;
 void EventBase::handleRoute(const std::string& endpoint, HTTPMethod method,
 			    const RouteHandler& handler)
 {
-	routes.emplace_back(Route(method, endpoint, handler));
+	routes[endpoint.c_str()][method] = handler;
 }
 
 
-EventBase::Route::Route(HTTPMethod method, std::string endpoint,
-			EventBase::RouteHandler handler)
-    : method(method), endpoint(std::move(endpoint)), handler(std::move(handler))
+EventBase::RouteHandler& EventBase::RouteOps::operator[](HTTPMethod method)
 {
+	const int methodIdx = static_cast<int>(method);
+	return handlers.at(methodIdx);
 }
 } // namespace REST

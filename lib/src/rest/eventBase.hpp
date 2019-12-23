@@ -2,10 +2,12 @@
 #define REST_EVENT_BASE
 
 
+#include <array>
 #include <functional>
 #include <list>
 #include <string>
 
+#include "../tree/tree.hpp"
 #include "defs.hpp"
 #include "request.hpp"
 #include "response.hpp"
@@ -37,18 +39,18 @@ class EventBase
 			 const RouteHandler& handler);
 
       private:
-	class Route
+	class RouteOps
 	{
+		static constexpr size_t nSupportedMethods =
+		    static_cast<size_t>(HTTPMethod::N_SUPPORTED_METHODS);
+
 	      public:
-		Route(HTTPMethod method, std::string endpoint,
-		      RouteHandler handler);
+		RouteHandler& operator[](HTTPMethod method);
 
 	      private:
-		HTTPMethod method;
-		std::string endpoint;
-		RouteHandler handler;
+		std::array<RouteHandler, nSupportedMethods> handlers;
 	};
-	std::list<Route> routes;
+	std::unordered_map<std::string, RouteOps> routes;
 };
 } // namespace REST
 
