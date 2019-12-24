@@ -28,6 +28,6 @@ void EventBase::handleRoute(const std::string& endpoint, HTTPMethod method,
 EventBase::RouteHandler& EventBase::RouteOps::operator[](HTTPMethod method)
 {
 	const int methodIdx = static_cast<int>(method);
-	return handlers.at(methodIdx);
+	return handlers[methodIdx];
 }
 } // namespace REST
