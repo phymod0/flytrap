@@ -4,10 +4,10 @@ add_library(flytrap
     STATIC
     src/transpose/writer.cpp
     src/transpose/reader.cpp
-    src/trie/trie.cpp
+    src/adt/trie/trie.cpp
     src/utils/logger.c
-    src/trie/stack.c
-    src/trie/trie.c
+    src/adt/trie/stack.c
+    src/adt/trie/trie.c
 )
 
 add_custom_target(test
