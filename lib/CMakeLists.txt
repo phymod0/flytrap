@@ -5,8 +5,6 @@ add_library(flytrap
     src/transpose/writer.cpp
     src/transpose/reader.cpp
     src/trie/trie.cpp
-    src/tree/tree.cpp
-    src/utils/splitIterator.cpp
     src/utils/logger.c
     src/trie/stack.c
     src/trie/trie.c
