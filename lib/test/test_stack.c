@@ -1,4 +1,4 @@
-#include "../src/trie/stack.c"
+#include "../src/adt/trie/stack.c"
 
 #include "ctest.h"
 

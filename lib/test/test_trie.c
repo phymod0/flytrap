@@ -1,6 +1,6 @@
-#include "../src/trie/stack.c"
-#include "../src/trie/trie.c"
-#include "../src/trie/trie.h"
+#include "../src/adt/trie/stack.c"
+#include "../src/adt/trie/trie.c"
+#include "../src/adt/trie/trie.h"
 
 #include "ctest.h"
 
