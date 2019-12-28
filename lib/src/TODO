@@ -1,4 +1,8 @@
+Limit evhttp input sizes
 Move all non-templatable functions to cpp files
 Return std::string_view in SplitIterator
 Disallow all direct imports
 Define all internal template class functions in cpp files
+Move library header files to lib/include
+User and/or/not instead of &&/||/!
+decltype where possible
