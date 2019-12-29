@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 
 namespace LibEvent
@@ -16,13 +17,12 @@ class Buffer
 	Buffer();
 	Buffer(evbuffer* evb);
 	void setReadLimit(size_t limit);
-	void setWriteLimit(size_t limit);
 	Buffer& operator<<(const std::string& str);
 	Buffer& operator>>(std::string& str);
+	operator bool();
 
       private:
-	size_t readLimit;
-	size_t writeLimit;
+	std::vector<char> readBuffer;
 	std::unique_ptr<evbuffer, decltype(&evbuffer_free)> evb;
 };
 } // namespace LibEvent
