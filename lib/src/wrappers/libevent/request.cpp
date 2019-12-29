@@ -107,10 +107,10 @@ void Request::setResponseHeader(const std::string& key, const std::string& val)
 }
 
 
-std::string Request::body() {}
+Buffer Request::body() { return Buffer(evhttp_request_get_input_buffer(req)); }
 
 
-void Request::sendReply(int code, const std::string& data) {}
+void Request::sendReply(int code, Buffer& data) {}
 
 
 void Request::sendError(int code, const std::string& data) {}

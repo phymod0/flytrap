@@ -9,6 +9,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "buffer.hpp"
+
 
 namespace LibEvent
 {
@@ -23,8 +25,8 @@ class Request
 	std::unordered_map<std::string, std::string> getRequestHeaders();
 	void setResponseHeader(const std::string& key, const std::string& val);
 
-	std::string body();
-	void sendReply(int code, const std::string& data);
+	Buffer body();
+	void sendReply(int code, Buffer& data);
 	void sendError(int code, const std::string& data);
 
       private:
