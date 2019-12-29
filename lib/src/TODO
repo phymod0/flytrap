@@ -6,3 +6,4 @@ Define all internal template class functions in cpp files
 Move library header files to lib/include
 User and/or/not instead of &&/||/!
 decltype where possible
+Check for NULL in static destroyer functions
