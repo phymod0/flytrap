@@ -27,15 +27,18 @@ static void callHandler(evhttp_request* req, void* data)
 
 namespace LibEvent
 {
-Http::Http(const EventBase& evBase, std::string ip, int port)
-    : evHttp(createHttp(evBase), destroyHttp), ip(std::move(ip)), port(port)
-{
-}
+Http::Http(const EventBase& evBase) : evHttp(createHttp(evBase), destroyHttp) {}
 
 
 void Http::setHandler(HandlerFn handlerFn)
 {
 	handler = std::move(handlerFn);
 	evhttp_set_gencb(evHttp.get(), callHandler, &handler);
+}
+
+
+void Http::bind(const std::string& ip, int port)
+{
+	evhttp_bind_socket(evHttp.get(), ip.c_str(), port);
 }
 } // namespace LibEvent

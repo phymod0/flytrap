@@ -18,14 +18,13 @@ class Http
 {
       public:
 	using HandlerFn = std::function<void(Request)>;
-	Http(const EventBase& evBase, std::string ip, int port);
+	Http(const EventBase& evBase);
 	void setHandler(HandlerFn handlerFn);
+	void bind(const std::string& ip, int port);
 
       private:
 	std::unique_ptr<evhttp, void (*)(evhttp*)> evHttp;
 	HandlerFn handler;
-	std::string ip;
-	int port;
 };
 } // namespace LibEvent
 
