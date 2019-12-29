@@ -1,9 +1,9 @@
 #include "http.hpp"
 
 
-static evhttp* createHttp(const LibEvent::EventBase& evBase)
+static evhttp* createHttp(event_base* base)
 {
-	evhttp* evHttp = evhttp_new(evBase.c_event_base());
+	evhttp* evHttp = evhttp_new(base);
 	if (not evHttp) {
 		throw std::runtime_error("Failed to create http server");
 	}
@@ -27,7 +27,10 @@ static void callHandler(evhttp_request* req, void* data)
 
 namespace LibEvent
 {
-Http::Http(const EventBase& evBase) : evHttp(createHttp(evBase), destroyHttp) {}
+Http::Http(const EventBase& evBase)
+    : evHttp(createHttp(evBase.eventBase.get()), destroyHttp)
+{
+}
 
 
 void Http::setHandler(HandlerFn handlerFn)

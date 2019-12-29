@@ -26,7 +26,4 @@ EventBase::EventBase() : eventBase(createEventBase(), destroyEventBase) {}
 
 
 void EventBase::dispatch() { event_base_dispatch(eventBase.get()); }
-
-
-event_base* EventBase::c_event_base() const { return eventBase.get(); }
 } // namespace LibEvent

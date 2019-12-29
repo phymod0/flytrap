@@ -2,6 +2,11 @@
 #define WRAPPER_LIBEVENT_BUFFER
 
 
+#ifndef INCLUDED_BY_LIBEVENT
+#error Do not include buffer.hpp directly
+#endif /* INCLUDED_BY_LIBEVENT */
+
+
 #include <event2/buffer.h>
 
 #include <memory>

@@ -2,6 +2,11 @@
 #define WRAPPER_LIBEVENT_HTTP
 
 
+#ifndef INCLUDED_BY_LIBEVENT
+#error Do not include http.hpp directly
+#endif /* INCLUDED_BY_LIBEVENT */
+
+
 #include "eventBase.hpp"
 #include "http.hpp"
 #include "request.hpp"
