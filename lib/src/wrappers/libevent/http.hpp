@@ -22,7 +22,7 @@ namespace LibEvent
 class Http
 {
       public:
-	using HandlerFn = std::function<void(Request)>;
+	using HandlerFn = std::function<void(Request& req)>;
 	Http(const EventBase& evBase);
 	void setHandler(HandlerFn handlerFn);
 	void bind(const std::string& ip, int port);

@@ -7,8 +7,6 @@
 #endif /* INCLUDED_BY_LIBEVENT */
 
 
-#include "http.hpp"
-
 #include <event2/event.h>
 
 #include <memory>
