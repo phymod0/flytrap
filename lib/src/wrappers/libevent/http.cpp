@@ -1,4 +1,6 @@
+#define INCLUDED_BY_LIBEVENT
 #include "http.hpp"
+#undef INCLUDED_BY_LIBEVENT
 
 
 static evhttp* createHttp(event_base* base)

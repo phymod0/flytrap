@@ -1,4 +1,6 @@
+#define INCLUDED_BY_LIBEVENT
 #include "eventBase.hpp"
+#undef INCLUDED_BY_LIBEVENT
 
 #include <stdexcept>
 

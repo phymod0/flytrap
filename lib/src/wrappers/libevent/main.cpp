@@ -4,7 +4,7 @@
 #include <string>
 
 
-LibEvent::Http::HandlerFn handler = [](LibEvent::Request& req) {
+LibEvent::Http::HandlerFn handler = [](LibEvent::Request&& req) {
 	std::string path = req.getURIPath();
 	evhttp_cmd_type method = req.getMethod();
 

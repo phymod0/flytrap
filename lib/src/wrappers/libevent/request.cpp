@@ -1,4 +1,6 @@
+#define INCLUDED_BY_LIBEVENT
 #include "request.hpp"
+#undef INCLUDED_BY_LIBEVENT
 
 #include <event2/http.h>
 #include <event2/keyvalq_struct.h>

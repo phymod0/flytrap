@@ -1,4 +1,6 @@
+#define INCLUDED_BY_LIBEVENT
 #include "buffer.hpp"
+#undef INCLUDED_BY_LIBEVENT
 
 #include <stdexcept>
 
