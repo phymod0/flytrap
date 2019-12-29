@@ -13,6 +13,8 @@ namespace LibEvent
 {
 class Buffer
 {
+	friend class Request;
+
       public:
 	Buffer();
 	Buffer(evbuffer* evb);

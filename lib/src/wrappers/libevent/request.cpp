@@ -110,10 +110,25 @@ void Request::setResponseHeader(const std::string& key, const std::string& val)
 Buffer Request::body() { return Buffer(evhttp_request_get_input_buffer(req)); }
 
 
-void Request::sendReply(int code, Buffer& data) {}
+void Request::sendReply(int code)
+{
+	evhttp_send_reply(req, code, nullptr, nullptr);
+}
 
 
-void Request::sendError(int code, const std::string& data) {}
+void Request::sendReply(int code, Buffer& data)
+{
+	evhttp_send_reply(req, code, nullptr, data.evb.get());
+}
+
+
+void Request::sendError(int code) { evhttp_send_error(req, code, nullptr); }
+
+
+void Request::sendError(int code, const std::string& data)
+{
+	evhttp_send_error(req, code, data.c_str());
+}
 
 
 evhttp_uri* Request::getDecodedURI()

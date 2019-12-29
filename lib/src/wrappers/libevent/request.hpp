@@ -2,14 +2,14 @@
 #define WRAPPER_LIBEVENT_REQUEST
 
 
+#include "buffer.hpp"
+
 #include <event2/http.h>
 
 #include <cstdlib>
 #include <memory>
 #include <string>
 #include <unordered_map>
-
-#include "buffer.hpp"
 
 
 namespace LibEvent
@@ -26,7 +26,9 @@ class Request
 	void setResponseHeader(const std::string& key, const std::string& val);
 
 	Buffer body();
+	void sendReply(int code);
 	void sendReply(int code, Buffer& data);
+	void sendError(int code);
 	void sendError(int code, const std::string& data);
 
       private:
