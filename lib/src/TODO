@@ -7,3 +7,4 @@ Move library header files to lib/include
 User and/or/not instead of &&/||/!
 decltype where possible
 Check for NULL in static destroyer functions
+const private member functions where possible
