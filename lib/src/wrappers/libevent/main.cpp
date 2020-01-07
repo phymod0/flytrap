@@ -1,5 +1,6 @@
 #include "libevent.hpp"
 
+#include <csignal>
 #include <iostream>
 #include <string>
 
@@ -23,6 +24,10 @@ int main()
 	http.setHandler(handler);
 	http.bind("0.0.0.0", 3000);
 
+	base.setSignalHandler(SIGINT, [&base]() {
+		std::cout << "Bye world!\n";
+		base.loopBreak();
+	});
 	base.dispatch();
 
 	return 0;
