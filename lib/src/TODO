@@ -8,3 +8,4 @@ User and/or/not instead of &&/||/!
 decltype where possible
 Check for NULL in static destroyer functions
 const private member functions where possible
+Implement blacklisting when relevant libevent functions are evailable
