@@ -5,6 +5,10 @@ add_library(flytrap
     src/transpose/writer.cpp
     src/transpose/reader.cpp
     src/adt/trie/trie.cpp
+    src/wrappers/libevent/buffer.cpp
+    src/wrappers/libevent/request.cpp
+    src/wrappers/libevent/eventBase.cpp
+    src/wrappers/libevent/http.cpp
     src/utils/logger.c
     src/adt/trie/stack.c
     src/adt/trie/trie.c
