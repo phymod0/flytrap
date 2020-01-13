@@ -30,6 +30,7 @@ static void executeSignalHandler(int signal, short events, void* cbData)
 {
 	const HandlerMap& handlers = *(HandlerMap*)cbData;
 	handlers.at(signal)();
+	(void)events;
 }
 
 
