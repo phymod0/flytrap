@@ -26,10 +26,10 @@ int logger_has_level(unsigned int level);
 #endif /* __cplusplus */
 
 
-#define LOGGER_LEVEL_DEBUG (1U << 3)
-#define LOGGER_LEVEL_INFO (1U << 2)
-#define LOGGER_LEVEL_WARN (1U << 1)
-#define LOGGER_LEVEL_ERROR (1U << 0)
+#define LOGGER_LEVEL_DEBUG (1U << 3U)
+#define LOGGER_LEVEL_INFO (1U << 2U)
+#define LOGGER_LEVEL_WARN (1U << 1U)
+#define LOGGER_LEVEL_ERROR (1U << 0U)
 
 
 #ifndef NDEBUG

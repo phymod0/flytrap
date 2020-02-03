@@ -18,19 +18,24 @@ typedef struct StringTree StringTree;
 StringTree* string_tree_create()
 {
 	LOGGER_DEBUG("Creating string tree");
-	StringTree* tree = malloc(sizeof *tree);
-	Trie* subtrees = trie_create(TRIE_OPS_NONE);
+	StringTree* tree = NULL;
+	Trie* subtrees = NULL;
 
+	tree = malloc(sizeof *tree);
+	subtrees = trie_create(TRIE_OPS_NONE);
 	if (!tree || !subtrees) {
-		LOGGER_ERROR("Failed to allocate memory");
-		free(tree);
-		free(subtrees);
-		return NULL;
+		goto oom;
 	}
 
 	tree->subtrees = subtrees;
 	tree->val = NULL;
 	return tree;
+
+oom:
+	LOGGER_ERROR("Failed to allocate memory");
+	free(tree);
+	free(subtrees);
+	return NULL;
 }
 
 
