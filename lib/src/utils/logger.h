@@ -37,7 +37,10 @@ int logger_has_level(unsigned int level);
 	{                                                                      \
 		FILE* fp = logger_get_file();                                  \
 		if (fp && logger_has_level(LOGGER_LEVEL)) {                    \
+			fprintf(fp, "[%s %s] ", __TIME__, __DATE__);           \
+			fprintf(fp, "%s:%d: ", __FILE__, __LINE__);            \
 			fprintf(fp, __VA_ARGS__);                              \
+			fprintf(fp, "\n");                                     \
 			fflush(fp);                                            \
 		}                                                              \
 	}
