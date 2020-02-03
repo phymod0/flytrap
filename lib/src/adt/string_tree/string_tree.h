@@ -8,7 +8,7 @@
 #define STRING_TREE
 
 
-/** Trie data structure. */
+/** String tree data structure. */
 struct StringTree;
 #ifndef STRING_TREE_FWD
 #define STRING_TREE_FWD
