@@ -1,12 +1,17 @@
 [
 {
   "directory": "/root/dev/flytrap/build/lib",
-  "command": "/usr/bin/c++   -I/root/dev/flytrap/lib/src    -o CMakeFiles/flytrap.dir/src/transpose/writer.cpp.o -c /root/dev/flytrap/lib/src/transpose/writer.cpp",
-  "file": "/root/dev/flytrap/lib/src/transpose/writer.cpp"
+  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/utils/logger.c.o   -c /root/dev/flytrap/lib/src/utils/logger.c",
+  "file": "/root/dev/flytrap/lib/src/utils/logger.c"
 },
 {
   "directory": "/root/dev/flytrap/build/lib",
-  "command": "/usr/bin/c++   -I/root/dev/flytrap/lib/src    -o CMakeFiles/flytrap.dir/src/transpose/reader.cpp.o -c /root/dev/flytrap/lib/src/transpose/reader.cpp",
-  "file": "/root/dev/flytrap/lib/src/transpose/reader.cpp"
+  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/adt/trie/stack.c.o   -c /root/dev/flytrap/lib/src/adt/trie/stack.c",
+  "file": "/root/dev/flytrap/lib/src/adt/trie/stack.c"
+},
+{
+  "directory": "/root/dev/flytrap/build/lib",
+  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/adt/trie/trie.c.o   -c /root/dev/flytrap/lib/src/adt/trie/trie.c",
+  "file": "/root/dev/flytrap/lib/src/adt/trie/trie.c"
 }
 ]
