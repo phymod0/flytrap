@@ -58,16 +58,10 @@ void* stack_pop(Stack* s)
 }
 
 
-void* stack_top(Stack* s)
-{
-	return s->head ? s->head->val : NULL;
-}
+void* stack_top(Stack* s) { return s->head ? s->head->val : NULL; }
 
 
-bool stack_empty(Stack* s)
-{
-	return s->head == NULL;
-}
+bool stack_empty(Stack* s) { return s->head == NULL; }
 
 
 void stack_destroy(Stack* s)

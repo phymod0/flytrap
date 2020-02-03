@@ -1,7 +1,7 @@
 #include <stdbool.h>
 
-#include "trie.h"
 #include "stack.h"
+#include "trie.h"
 
 
 #define VALLOC(x, type, n) (x = (type*)malloc((n) * sizeof *(x)))
@@ -83,11 +83,9 @@ Trie* trie_create(const struct TrieOps ops)
 	char* empty = NULL;
 	struct TrieOps* trie_ops = NULL;
 	TrieNode* children = NULL;
-	if (!ALLOC(trie, Trie)
-	    || !ALLOC(root, TrieNode)
-	    || !VALLOC(empty, char, 1)
-	    || !ALLOC(trie_ops, struct TrieOps)
-	    || !VALLOC(children, TrieNode, 0))
+	if (!ALLOC(trie, Trie) || !ALLOC(root, TrieNode) ||
+	    !VALLOC(empty, char, 1) || !ALLOC(trie_ops, struct TrieOps) ||
+	    !VALLOC(children, TrieNode, 0))
 		goto oom;
 
 	empty[0] = '\0';
@@ -124,10 +122,7 @@ void trie_destroy(Trie* trie)
 }
 
 
-size_t trie_maxkeylen_added(Trie* trie)
-{
-	return trie->max_keylen_added;
-}
+size_t trie_maxkeylen_added(Trie* trie) { return trie->max_keylen_added; }
 
 
 int trie_insert(Trie* trie, char* key, void* val)
@@ -143,8 +138,8 @@ int trie_insert(Trie* trie, char* key, void* val)
 
 	bool err;
 	if (key[0]) {
-		err = !(new_child = node_create(key, val))
-		      || node_branch(node, segptr, new_child) < 0;
+		err = !(new_child = node_create(key, val)) ||
+		      node_branch(node, segptr, new_child) < 0;
 	} else {
 		err = node_split(node, segptr) < 0;
 		if (!err)
@@ -241,7 +236,8 @@ TrieIterator* trie_findall(Trie* trie, const char* key_prefix,
 
 void trie_iter_next(TrieIterator** iter_p)
 {
-	while (!trie_iter_step(iter_p));
+	while (!trie_iter_step(iter_p))
+		;
 }
 
 
@@ -295,9 +291,8 @@ static TrieNode* node_create(char* segment, void* value)
 {
 	char* seg = NULL;
 	TrieNode *node = NULL, *children = NULL;
-	if (!ALLOC(node, TrieNode)
-	    || !(seg = str_dup(segment))
-	    || !VALLOC(children, TrieNode, 0))
+	if (!ALLOC(node, TrieNode) || !(seg = str_dup(segment)) ||
+	    !VALLOC(children, TrieNode, 0))
 		goto oom;
 
 	node->segment = seg;
@@ -335,8 +330,8 @@ static int node_split(TrieNode* node, char* at)
 	TrieNode* child = NULL;
 	size_t parent_seglen = (size_t)(at - node->segment);
 
-	if (!(segment = str_n_dup(node->segment, parent_seglen))
-	    || !(child = node_create(at, node->value)))
+	if (!(segment = str_n_dup(node->segment, parent_seglen)) ||
+	    !(child = node_create(at, node->value)))
 		goto oom;
 
 	child->n_children = node->n_children;
@@ -423,7 +418,8 @@ static inline TrieNode* leq_child(TrieNode* node, char find)
 static inline ptrdiff_t pflen_equal(const char* of, const char* with)
 {
 	const char* of_old = of;
-	while (*of++ == *with++ && of[-1]);
+	while (*of++ == *with++ && of[-1])
+		;
 	return (of - 1) - of_old;
 }
 
@@ -517,8 +513,7 @@ static int node_branch(TrieNode* node, char* at, TrieNode* child)
 }
 
 
-static int node_delchild(TrieNode* node, TrieNode* child,
-			 destructor_t dtor)
+static int node_delchild(TrieNode* node, TrieNode* child, destructor_t dtor)
 {
 	ptrdiff_t del;
 	size_t n_children = node->n_children, sz1, sz2;
@@ -563,7 +558,8 @@ static inline char* key_buffer_create(size_t max_keylen)
 
 static inline char* segncpy(char* dest, const char* src, size_t n)
 {
-	while (n-- && (*dest++ = *src++));
+	while (n-- && (*dest++ = *src++))
+		;
 	return dest - 1;
 }
 
@@ -601,8 +597,8 @@ static bool trie_iter_step(TrieIterator** iter_p)
 		return false;
 
 	for (size_t i = node->n_children; i != 0; --i)
-		if (stack_push(node_stack, &node->children[i - 1]) < 0
-		    || stack_push(keyptr_stack, keyend) < 0)
+		if (stack_push(node_stack, &node->children[i - 1]) < 0 ||
+		    stack_push(keyptr_stack, keyend) < 0)
 			goto oom;
 
 	return (iter->value = node->value) ? true : false;
@@ -631,12 +627,12 @@ static TrieIterator* trie_iter_create(const char* truncated_prefix,
 					     max_keylen)))
 		goto return_empty_iterator;
 
-	if (!(node_stack = stack_create(STACK_OPS_NONE))
-	    || !(keyptr_stack = stack_create(STACK_OPS_NONE)))
+	if (!(node_stack = stack_create(STACK_OPS_NONE)) ||
+	    !(keyptr_stack = stack_create(STACK_OPS_NONE)))
 		goto oom;
 	for (size_t i = node->n_children; i != 0; --i)
-		if (stack_push(node_stack, &node->children[i - 1]) < 0
-		    || stack_push(keyptr_stack, child_keyptr) < 0)
+		if (stack_push(node_stack, &node->children[i - 1]) < 0 ||
+		    stack_push(keyptr_stack, child_keyptr) < 0)
 			goto oom;
 
 	iter->node_stack = node_stack;

@@ -8,14 +8,14 @@
 #define TRIE
 
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stddef.h>
 
 
 /** Operations on trie values. */
 struct TrieOps {
-	void (*dtor)(void*); /**< Destructor for an inserted value. */
+	void (*dtor)(void*);       /**< Destructor for an inserted value. */
 	size_t (*memusage)(void*); /**< Memory usage evaluator for values. */
 };
 
@@ -55,7 +55,7 @@ typedef struct Trie Trie;
  * @param ops Set of trie value operations
  * @returns Allocated trie structure or NULL if out of memory
  */
-Trie* trie_create(const struct TrieOps ops);
+Trie* trie_create(struct TrieOps ops);
 
 /**
  * Destroy a trie.
@@ -79,7 +79,7 @@ size_t trie_maxkeylen_added(Trie* trie);
  * Insert a key-value pair into a trie.
  *
  * Values inserted with a pre-existing key will replace the corresponding
- * pre-existing value and the pre-existing value will be destroyed.
+ * pre-existing value and the pre-existing value will be destroyed if not NULL.
  *
  * The insertion will fail either if the required amount of free memory is not
  * available or if <code>val</code> is NULL. In case of failure, the trie is
