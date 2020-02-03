@@ -5,6 +5,7 @@ add_library(flytrap
     src/utils/logger.c
     src/adt/trie/stack.c
     src/adt/trie/trie.c
+    src/adt/string_tree/string_tree.c
 )
 
 add_custom_target(test
