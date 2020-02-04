@@ -92,19 +92,21 @@ int rest_register_handlers(const HTTPHandler handlers[], RestCtx* ctx)
 
 int rest_bind_addr(const char* ip, int port, RestCtx* ctx)
 {
-	/* Not implemented */
-	return -1;
+	return evhttp_bind_socket(ctx->http, ip, port);
 }
 
 
 void rest_bind_state(void* server_ctx, RestCtx* ctx)
-{ /* Not implemented */
+{
+	ctx->server_ctx = server_ctx;
 }
 
 
 int rest_dispatch(RestCtx* ctx)
 {
 	/* Not implemented */
+	/* TODO: Method for setting generic callback and signal handler */
+	/* TODO: init() in ctor? */
 	return -1;
 }
 
