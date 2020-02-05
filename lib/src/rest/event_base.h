@@ -10,12 +10,12 @@
  *
  * @param server_ctx Server state passed to <code>rest_bind_state</code>
  * @param request libevent request object for the HTTP request in context
- * @param route_argc Number of substituted path wildcards
- * @param route_argv Substituted path wildcards
+ * @param path_argc Number of substituted path wildcards
+ * @param path_argv Substituted path wildcards
  * @returns 0 on successful execution, or -1 to indicate a 5XX error
  */
 typedef int (*HTTPMethod)(void* server_ctx, struct evhttp_request* request,
-			  int route_argc, const char** route_argv);
+			  int path_argc, char** path_argv);
 
 /** Set of HTTP methods */
 typedef struct {
@@ -25,15 +25,15 @@ typedef struct {
 	HTTPMethod DELETE;
 } HTTPMethods;
 
-/** Set of HTTP methods for a particular route */
+/** Set of HTTP methods for a particular path */
 typedef struct {
-	const char* route;
+	const char* path;
 	HTTPMethods methods;
 } HTTPHandler;
 
 /** Reserved HTTPHandler object to mark the end of an array */
 #define REST_END_HANDLERS                                                      \
-	(HTTPHandler) { .route = NULL }
+	(HTTPHandler) { .path = NULL }
 
 /** REST event base context */
 struct RestCtx;
@@ -58,7 +58,7 @@ RestCtx* rest_ctx_create();
 void rest_ctx_destroy(RestCtx* ctx);
 
 /**
- * Register all routes to handle.
+ * Register all paths to handle.
  *
  * @param handlers Array of <code>HTTPHandler</code> objects
  * @returns 0 on success, -1 on failure

@@ -2,10 +2,11 @@ include_directories(src)
 
 add_library(flytrap
     STATIC
-    src/utils/logger.c
+    src/adt/string_tree/string_tree.c
     src/adt/trie/stack.c
     src/adt/trie/trie.c
-    src/adt/string_tree/string_tree.c
+    src/rest/event_base.c
+    src/utils/logger.c
 )
 
 add_custom_target(test

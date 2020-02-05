@@ -1,5 +1,6 @@
 #include <event2/event.h>
 #include <event2/http.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,8 +20,16 @@ struct RestCtx {
 
 static char* str_n_dup(const char* str, size_t n);
 static StringTree* get_path_subtree(StringTree* tree, const char* path);
+static char** argv_create(int argc);
+static void argv_destroy(int argc, char** argv);
+static StringTree* find_path_subtree(StringTree* tree, const char* path,
+				     int* path_argc, char*** path_argv);
 static int register_single_handler(const HTTPHandler* handler, RestCtx* ctx);
-static void generic_handler_callback(struct evhttp_request* req, void* data);
+static void handle_signal(int sig, short events, void* data);
+static const char* get_method_str(enum evhttp_cmd_type method);
+static char* get_request_path(struct evhttp_request* req);
+static void generic_handler_cb(struct evhttp_request* req, void* data);
+static struct event_base* event_base_create_and_init();
 
 
 RestCtx* rest_ctx_create()
@@ -31,7 +40,7 @@ RestCtx* rest_ctx_create()
 	StringTree* handlers = NULL;
 
 	ctx = malloc(sizeof *ctx);
-	base = event_base_new();
+	base = event_base_create_and_init();
 	http = evhttp_new(base);
 	handlers = string_tree_create();
 	if (!ctx || !base || !http || !handlers) {
@@ -39,7 +48,7 @@ RestCtx* rest_ctx_create()
 	}
 
 	ctx->base = base;
-	evhttp_set_gencb(http, generic_handler_callback, ctx);
+	evhttp_set_gencb(http, generic_handler_cb, ctx);
 	ctx->http = http;
 	ctx->handlers = handlers;
 	ctx->server_ctx = NULL;
@@ -74,14 +83,14 @@ void rest_ctx_destroy(RestCtx* ctx)
 
 int rest_register_handlers(const HTTPHandler handlers[], RestCtx* ctx)
 {
-	for (const HTTPHandler* handler = handlers; handler->route; ++handler) {
+	for (const HTTPHandler* handler = handlers; handler->path; ++handler) {
 		if (register_single_handler(handler, ctx) < 0) {
 			LOGGER_WARN("Could not register some handlers");
 			return -1;
 		}
-		LOGGER_INFO("Registered route %s with the following "
+		LOGGER_INFO("Registered path %s with the following "
 			    "handlers:%s%s%s%s",
-			    handler->route, handler->methods.PUT ? " PUT" : "",
+			    handler->path, handler->methods.PUT ? " PUT" : "",
 			    handler->methods.GET ? " GET" : "",
 			    handler->methods.POST ? " POST" : "",
 			    handler->methods.DELETE ? " DELETE" : "");
@@ -104,17 +113,25 @@ void rest_bind_state(void* server_ctx, RestCtx* ctx)
 
 int rest_dispatch(RestCtx* ctx)
 {
-	/* Not implemented */
-	/* TODO: Method for setting generic callback and signal handler */
-	/* TODO: init() in ctor? */
+	switch (event_base_dispatch(ctx->base)) {
+	case 0:
+	case 1:
+		LOGGER_INFO("Event loop dispatch was successful");
+		return 0;
+	}
+	LOGGER_DEBUG("Failed to dispatch event loop");
 	return -1;
 }
 
 
 int rest_loopbreak(RestCtx* ctx)
 {
-	/* Not implemented */
-	return -1;
+	if (event_base_loopbreak(ctx->base) < 0) {
+		LOGGER_ERROR("Failed to break event loop");
+		return -1;
+	}
+	LOGGER_INFO("Terminating event loop");
+	return 0;
 }
 
 
@@ -148,14 +165,80 @@ static StringTree* get_path_subtree(StringTree* tree, const char* path)
 	return tree;
 
 err:
+	LOGGER_ERROR("Out of memory");
 	free(_path);
+	return NULL;
+}
+
+
+static char** argv_create(int argc)
+{
+	return argc ? calloc(argc, sizeof(char*)) : NULL;
+}
+
+
+static void argv_destroy(int argc, char** argv)
+{
+	if (!argv) {
+		return;
+	}
+	for (int i = 0; i < argc; ++i) {
+		free(argv[i]);
+	}
+	free(argv);
+}
+
+
+static StringTree* find_path_subtree(StringTree* tree, const char* path,
+				     int* path_argc, char*** path_argv)
+{
+	const char* wc = REST_PATH_SEGMENT_WILDCARD;
+	char* dup_path = NULL;
+	int argc = 0;
+	char** argv = NULL;
+	int argi;
+
+	if (!(dup_path = str_n_dup(path, REST_PATH_MAXSZ))) {
+		goto oom;
+	}
+
+	for (char* arg = strstr(path, wc); arg; arg = strstr(arg + 1, wc)) {
+		++argc;
+	}
+	if (!(argv = argv_create(argc))) {
+		goto oom;
+	}
+
+	argi = 0;
+	for (char* tok = strtok(dup_path, "/"); tok; tok = strtok(NULL, "/")) {
+		if (!tree) {
+			break;
+		}
+		StringTree* subtree = string_tree_find_subtree(tree, tok);
+		if (!subtree) {
+			subtree = string_tree_find_subtree(tree, wc);
+		}
+		tree = subtree;
+		if (!(argv[argi++] = str_n_dup(tok, REST_PATH_MAXSZ))) {
+			goto oom;
+		}
+	}
+	*path_argc = argc;
+	*path_argv = argv;
+	free(dup_path);
+	return tree;
+
+oom:
+	LOGGER_ERROR("Out of memory");
+	argv_destroy(argc, argv);
+	free(dup_path);
 	return NULL;
 }
 
 
 static int register_single_handler(const HTTPHandler* handler, RestCtx* ctx)
 {
-	const char* path = handler->route;
+	const char* path = handler->path;
 	if (strlen(path) > REST_PATH_MAXSZ) {
 		LOGGER_WARN("Path %s will be truncated", path);
 	}
@@ -174,14 +257,165 @@ static int register_single_handler(const HTTPHandler* handler, RestCtx* ctx)
 }
 
 
-static void generic_handler_callback(struct evhttp_request* req, void* data)
+static void handle_signal(int sig, short events, void* data)
 {
-	RestCtx* ctx = data;
-	StringTree* handlers = ctx->handlers;
-	void* server_ctx = ctx->server_ctx;
+	struct event_base* base = data;
+	event_base_loopbreak(base);
+	LOGGER_INFO("Terminating event loop due to signal %i", sig);
+	(void)sig;
+	(void)events;
+}
 
-	/* TODO: Call correct handler */
-	(void)req;
-	(void)handlers;
-	(void)server_ctx;
+
+static const char* get_method_str(enum evhttp_cmd_type method)
+{
+	switch (method) {
+	case EVHTTP_REQ_GET:
+		return "GET";
+	case EVHTTP_REQ_POST:
+		return "POST";
+	case EVHTTP_REQ_HEAD:
+		return "HEAD";
+	case EVHTTP_REQ_PUT:
+		return "PUT";
+	case EVHTTP_REQ_DELETE:
+		return "DELETE";
+	case EVHTTP_REQ_OPTIONS:
+		return "OPTIONS";
+	case EVHTTP_REQ_TRACE:
+		return "TRACE";
+	case EVHTTP_REQ_CONNECT:
+		return "CONNECT";
+	case EVHTTP_REQ_PATCH:
+		return "PATCH";
+	default:
+		return "unknown";
+	}
+}
+
+
+static char* get_request_path(struct evhttp_request* req)
+{
+	const char* uri;
+	struct evhttp_uri* decoded = NULL;
+	const char* path;
+	char* decoded_path = NULL;
+
+	uri = evhttp_request_get_uri(req);
+	if (!(decoded = evhttp_uri_parse(uri))) {
+		goto err;
+	}
+	path = evhttp_uri_get_path(decoded);
+	if (!(decoded_path = evhttp_uridecode(path, 0, NULL))) {
+		goto err;
+	}
+	evhttp_uri_free(decoded);
+	return decoded_path;
+
+err:
+	if (decoded) {
+		evhttp_uri_free(decoded);
+	}
+	if (decoded_path) {
+		free(decoded_path);
+	}
+	LOGGER_ERROR("Failed to read request path");
+	return NULL;
+}
+
+
+static void generic_handler_cb(struct evhttp_request* req, void* data)
+{
+	RestCtx* ctx;
+	struct evhttp_connection* conn;
+	enum evhttp_cmd_type method;
+	const char* method_str;
+	char* peer_ip;
+	ev_uint16_t peer_port;
+	char* path = NULL;
+	int path_argc = 0;
+	char** path_argv = NULL;
+	StringTree* path_handlers;
+	HTTPHandler* handler;
+	HTTPMethod method_fn;
+
+	ctx = data;
+	conn = evhttp_request_get_connection(req);
+	method = evhttp_request_get_command(req);
+	method_str = get_method_str(method);
+	evhttp_connection_get_peer(conn, &peer_ip, &peer_port);
+	if (!(path = get_request_path(req))) {
+		LOGGER_ERROR("Failed to serve request");
+		evhttp_send_error(req, HTTP_BADREQUEST, "Bad request");
+		goto done;
+	}
+
+	LOGGER_INFO("Received %s request for %s from %s:%i", method_str, path,
+		    peer_ip, peer_port);
+
+	path_handlers =
+	    find_path_subtree(ctx->handlers, path, &path_argc, &path_argv);
+	if (!path_handlers) {
+		LOGGER_INFO("Requested path %s not found", path);
+		evhttp_send_error(req, HTTP_NOTFOUND, "Path not found");
+		goto done;
+	}
+	handler = string_tree_get_value(path_handlers);
+	switch (method) {
+	case EVHTTP_REQ_GET:
+		method_fn = handler->methods.GET;
+		break;
+	case EVHTTP_REQ_POST:
+		method_fn = handler->methods.POST;
+		break;
+	case EVHTTP_REQ_PUT:
+		method_fn = handler->methods.PUT;
+		break;
+	case EVHTTP_REQ_DELETE:
+		method_fn = handler->methods.DELETE;
+		break;
+	default:
+		method_fn = NULL;
+	}
+
+	if (!method_fn) {
+		LOGGER_INFO("Requested method %s not implemented for path %s",
+			    method_str, path);
+		evhttp_send_error(req, HTTP_BADMETHOD, "Bad method");
+		goto done;
+	}
+
+	if (method_fn(ctx->server_ctx, req, path_argc, path_argv) < 0) {
+		LOGGER_INFO("%s %s raised an internal error", method_str, path);
+		evhttp_send_error(req, HTTP_INTERNAL, "Internal error");
+		goto done;
+	}
+
+done:
+	argv_destroy(path_argc, path_argv);
+	free(path);
+}
+
+
+static struct event_base* event_base_create_and_init()
+{
+	struct event_base* base = NULL;
+	struct event* term = NULL;
+
+	base = event_base_new();
+	term = evsignal_new(base, SIGINT, handle_signal, base);
+	if (!base || !term || event_add(term, NULL)) {
+		goto err;
+	}
+
+	return base;
+
+err:
+	if (term) {
+		event_free(term);
+	}
+	if (base) {
+		event_base_free(base);
+	}
+	return NULL;
 }

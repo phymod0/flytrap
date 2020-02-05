@@ -2,6 +2,8 @@
 #define LOGGER
 
 
+#include "../config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #include <cstdio>
@@ -32,7 +34,7 @@ int logger_has_level(unsigned int level);
 #define LOGGER_LEVEL_ERROR (1U << 0U)
 
 
-#ifndef NDEBUG
+#ifdef LOGGING_ENABLE
 #define LOGGER_LOG(LOGGER_LEVEL, ...)                                          \
 	{                                                                      \
 		FILE* fp = logger_get_file();                                  \
@@ -44,9 +46,9 @@ int logger_has_level(unsigned int level);
 			fflush(fp);                                            \
 		}                                                              \
 	}
-#else /* NDEBUG */
+#else /* LOGGING_ENABLE */
 #define LOGGER_LOG(LOGGER_LEVEL, ...)
-#endif /* NDEBUG */
+#endif /* LOGGING_ENABLE */
 
 #define LOGGER_DEBUG(...) LOGGER_LOG(LOGGER_LEVEL_DEBUG, __VA_ARGS__)
 #define LOGGER_INFO(...) LOGGER_LOG(LOGGER_LEVEL_INFO, __VA_ARGS__)
