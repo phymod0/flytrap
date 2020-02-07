@@ -7,7 +7,7 @@
 #include "../adt/string_tree/string_tree.h"
 #include "../config.h"
 #include "../utils/logger.h"
-#include "event_base.h"
+#include "rest.h"
 
 
 struct RestCtx {
@@ -173,7 +173,7 @@ err:
 
 static char** argv_create(int argc)
 {
-	return argc ? calloc(argc, sizeof(char*)) : NULL;
+	return calloc(argc > 0 ? argc : 1, sizeof(char*));
 }
 
 
@@ -239,6 +239,8 @@ oom:
 static int register_single_handler(const HTTPHandler* handler, RestCtx* ctx)
 {
 	const char* path = handler->path;
+	void* methods = (void*)&handler->methods;
+
 	if (strlen(path) > REST_PATH_MAXSZ) {
 		LOGGER_WARN("Path %s will be truncated", path);
 	}
@@ -252,7 +254,8 @@ static int register_single_handler(const HTTPHandler* handler, RestCtx* ctx)
 		LOGGER_WARN("Handlers for path %s already registered", path);
 	}
 
-	string_tree_set_value(tree, (HTTPMethods*)&handler->methods);
+	string_tree_set_value(tree, methods);
+	LOGGER_INFO("Registered methods at %p for path %s", methods, path);
 	return 0;
 }
 
@@ -336,7 +339,7 @@ static void generic_handler_cb(struct evhttp_request* req, void* data)
 	int path_argc = 0;
 	char** path_argv = NULL;
 	StringTree* path_handlers;
-	HTTPHandler* handler;
+	HTTPMethods* methods;
 	HTTPMethod method_fn;
 
 	ctx = data;
@@ -360,19 +363,19 @@ static void generic_handler_cb(struct evhttp_request* req, void* data)
 		evhttp_send_error(req, HTTP_NOTFOUND, "Path not found");
 		goto done;
 	}
-	handler = string_tree_get_value(path_handlers);
+	methods = string_tree_get_value(path_handlers);
 	switch (method) {
 	case EVHTTP_REQ_GET:
-		method_fn = handler->methods.GET;
+		method_fn = methods->GET;
 		break;
 	case EVHTTP_REQ_POST:
-		method_fn = handler->methods.POST;
+		method_fn = methods->POST;
 		break;
 	case EVHTTP_REQ_PUT:
-		method_fn = handler->methods.PUT;
+		method_fn = methods->PUT;
 		break;
 	case EVHTTP_REQ_DELETE:
-		method_fn = handler->methods.DELETE;
+		method_fn = methods->DELETE;
 		break;
 	default:
 		method_fn = NULL;
