@@ -15,6 +15,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Install dependencies
+      run: sudo apt-get install libevent-dev
     - name: Build lib/
       run: mkdir build && cd build/ && cmake .. && make
 
