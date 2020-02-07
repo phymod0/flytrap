@@ -5,7 +5,7 @@ add_library(flytrap
     src/adt/string_tree/string_tree.c
     src/adt/trie/stack.c
     src/adt/trie/trie.c
-    src/rest/event_base.c
+    src/rest/rest.c
     src/utils/logger.c
 )
 
