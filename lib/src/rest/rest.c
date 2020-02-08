@@ -20,8 +20,8 @@ struct RestCtx {
 
 static char* str_n_dup(const char* str, size_t n);
 static StringTree* get_path_subtree(StringTree* tree, const char* path);
-static char** argv_create(int argc);
-static void argv_destroy(int argc, char** argv);
+static char** path_argv_create(int size);
+static void path_argv_destroy(int argc, char** argv);
 static StringTree* find_path_subtree(StringTree* tree, const char* path,
 				     int* path_argc, char*** path_argv);
 static int register_single_handler(const HTTPHandler* handler, RestCtx* ctx);
@@ -171,13 +171,13 @@ err:
 }
 
 
-static char** argv_create(int argc)
+static char** path_argv_create(int size)
 {
-	return calloc(argc > 0 ? argc : 1, sizeof(char*));
+	return calloc(size > 0 ? size : 1, sizeof(char*));
 }
 
 
-static void argv_destroy(int argc, char** argv)
+static void path_argv_destroy(int argc, char** argv)
 {
 	if (!argv) {
 		return;
@@ -194,32 +194,36 @@ static StringTree* find_path_subtree(StringTree* tree, const char* path,
 {
 	const char* wc = REST_PATH_SEGMENT_WILDCARD;
 	char* dup_path = NULL;
-	int argc = 0;
 	char** argv = NULL;
-	int argi;
+	int argc;
 
 	if (!(dup_path = str_n_dup(path, REST_PATH_MAXSZ))) {
 		goto oom;
 	}
-
-	for (char* arg = strstr(path, wc); arg; arg = strstr(arg + 1, wc)) {
-		++argc;
-	}
-	if (!(argv = argv_create(argc))) {
+	if (!(argv = path_argv_create(REST_PATH_MAX_WILDCARDS))) {
 		goto oom;
 	}
 
-	argi = 0;
+	argc = 0;
 	for (char* tok = strtok(dup_path, "/"); tok; tok = strtok(NULL, "/")) {
+		StringTree* subtree;
 		if (!tree) {
+			LOGGER_INFO("No match in path tree for %s", path);
 			break;
 		}
-		StringTree* subtree = string_tree_find_subtree(tree, tok);
-		if (!subtree) {
-			subtree = string_tree_find_subtree(tree, wc);
+		subtree = string_tree_find_subtree(tree, tok);
+		if (subtree) {
+			tree = subtree;
+			continue;
 		}
-		tree = subtree;
-		if (!(argv[argi++] = str_n_dup(tok, REST_PATH_MAXSZ))) {
+		if (!(tree = string_tree_find_subtree(tree, wc))) {
+			continue;
+		}
+		if (argc >= REST_PATH_MAX_WILDCARDS) {
+			LOGGER_WARN("Wildcard table is full");
+			continue;
+		}
+		if (!(argv[argc++] = str_n_dup(tok, REST_PATH_MAXSZ))) {
 			goto oom;
 		}
 	}
@@ -230,7 +234,7 @@ static StringTree* find_path_subtree(StringTree* tree, const char* path,
 
 oom:
 	LOGGER_ERROR("Out of memory");
-	argv_destroy(argc, argv);
+	path_argv_destroy(REST_PATH_MAX_WILDCARDS, argv);
 	free(dup_path);
 	return NULL;
 }
@@ -336,9 +340,9 @@ static void generic_handler_cb(struct evhttp_request* req, void* data)
 	char* peer_ip;
 	ev_uint16_t peer_port;
 	char* path = NULL;
-	int path_argc = 0;
-	char** path_argv = NULL;
-	StringTree* path_handlers;
+	int argc = 0;
+	char** argv = NULL;
+	StringTree* handlers;
 	HTTPMethods* methods;
 	HTTPMethod method_fn;
 
@@ -356,14 +360,14 @@ static void generic_handler_cb(struct evhttp_request* req, void* data)
 	LOGGER_INFO("Received %s request for %s from %s:%i", method_str, path,
 		    peer_ip, peer_port);
 
-	path_handlers =
-	    find_path_subtree(ctx->handlers, path, &path_argc, &path_argv);
-	if (!path_handlers) {
+	if (!(handlers =
+		  find_path_subtree(ctx->handlers, path, &argc, &argv)) ||
+	    !(methods = string_tree_get_value(handlers))) {
 		LOGGER_INFO("Requested path %s not found", path);
 		evhttp_send_error(req, HTTP_NOTFOUND, "Path not found");
 		goto done;
 	}
-	methods = string_tree_get_value(path_handlers);
+
 	switch (method) {
 	case EVHTTP_REQ_GET:
 		method_fn = methods->GET;
@@ -388,14 +392,14 @@ static void generic_handler_cb(struct evhttp_request* req, void* data)
 		goto done;
 	}
 
-	if (method_fn(ctx->server_ctx, req, path_argc, path_argv) < 0) {
+	if (method_fn(ctx->server_ctx, req, argc, argv) < 0) {
 		LOGGER_INFO("%s %s raised an internal error", method_str, path);
 		evhttp_send_error(req, HTTP_INTERNAL, "Internal error");
 		goto done;
 	}
 
 done:
-	argv_destroy(path_argc, path_argv);
+	path_argv_destroy(argc, argv);
 	free(path);
 }
 

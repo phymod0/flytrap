@@ -34,11 +34,18 @@ int logger_has_level(unsigned int level);
 #define LOGGER_LEVEL_ERROR (1U << 0U)
 
 
-#ifdef LOGGING_ENABLE
+#if LOGGING_ENABLE
 #define LOGGER_LOG(LOGGER_LEVEL, ...)                                          \
 	{                                                                      \
 		FILE* fp = logger_get_file();                                  \
+		char level_initial = (char[]){                                 \
+		    [LOGGER_LEVEL_DEBUG] = 'D',                                \
+		    [LOGGER_LEVEL_INFO] = 'I',                                 \
+		    [LOGGER_LEVEL_WARN] = 'W',                                 \
+		    [LOGGER_LEVEL_ERROR] = 'E',                                \
+		}[LOGGER_LEVEL];                                               \
 		if (fp && logger_has_level(LOGGER_LEVEL)) {                    \
+			fprintf(fp, "%c ", level_initial);                     \
 			fprintf(fp, "[%s %s] ", __TIME__, __DATE__);           \
 			fprintf(fp, "%s:%d: ", __FILE__, __LINE__);            \
 			fprintf(fp, __VA_ARGS__);                              \

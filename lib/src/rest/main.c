@@ -1,6 +1,8 @@
 #include <event2/buffer.h>
 #include <event2/http.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "../utils/logger.h"
 #include "rest.h"
@@ -8,22 +10,49 @@
 
 typedef struct {
 	int request_counter;
+	char* last_message;
 } server_data;
 
 
-int handle_get(void* data, struct evhttp_request* req, int path_argc,
-	       char** path_argv)
+#define MAX_BUFSZ 256
+
+
+static char* str_n_dup(const char* str, size_t n)
+{
+	size_t len = strlen(str);
+	size_t min = len < n ? len : n;
+	char* result;
+	if ((result = malloc(min + 1))) {
+		memcpy(result, str, min);
+		result[min] = '\0';
+	}
+	return result;
+}
+
+
+int handle_get(void* data, struct evhttp_request* req, int argc, char** argv)
 {
 	struct evbuffer* evb = evbuffer_new();
-	evbuffer_add_printf(evb, "<h1>Greetings faggot</h1>");
+	char* arg = argc >= 1 ? argv[0] : NULL;
 	server_data* server_data = data;
+
+	evbuffer_add_printf(evb,
+			    "<b>Greetings faggot, you just sent request #%d "
+			    "with parameter %s</b>",
+			    server_data->request_counter + 1, arg);
+	evbuffer_add_printf(evb, "<br>");
+	evbuffer_add_printf(evb, "<i>Last parameter received was <u>%s</u></i>",
+			    server_data->last_message);
+
+	if (server_data->last_message) {
+		free(server_data->last_message);
+	}
+	server_data->last_message = str_n_dup(arg ? arg : ":(", MAX_BUFSZ);
 	++server_data->request_counter;
+
 	evhttp_send_reply(req, HTTP_OK, "OK :)", evb);
 	evbuffer_free(evb);
-	printf("Had argc: %d\n", path_argc);
 	return 0;
-	(void)path_argc;
-	(void)path_argv;
 }
 
 
@@ -35,6 +64,7 @@ int main(void)
 	RestCtx* ctx = rest_ctx_create();
 
 	logger_log_to_stdout();
+	// logger_set_levels(LOGGER_LEVEL_INFO);
 	if (!ctx) {
 		goto err;
 	}
@@ -42,7 +72,7 @@ int main(void)
 	res = rest_register_handlers(
 	    (HTTPHandler[]){
 		{
-		    "/api/login/<?>/lol",
+		    "/api/<?>/login",
 		    {
 			.GET = handle_get,
 		    },
@@ -59,7 +89,7 @@ int main(void)
 	if ((res = rest_dispatch(ctx)) != 0) {
 		printf("Nonzero exit code %d for dispatch\n", res);
 	} else {
-		printf("Dispatched with exist code 0!!!\n");
+		printf("Dispatched with exit code 0!!!\n");
 	}
 
 	rest_ctx_destroy(ctx);
