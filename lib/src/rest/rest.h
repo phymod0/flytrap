@@ -31,9 +31,11 @@ typedef struct {
 	HTTPMethods methods;
 } HTTPHandler;
 
-/** Reserved HTTPHandler object to mark the end of an array */
+/** HTTPHandler object to mark the end of an array */
 #define REST_END_HANDLERS                                                      \
-	(HTTPHandler) { .path = NULL }
+	{                                                                      \
+		.path = NULL                                                   \
+	}
 
 /** REST event base context */
 struct RestCtx;
