@@ -1,0 +1,192 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	0.0.0	/3fdf28bc/
+ALLOC	adt/trie/stack.c	/^#define ALLOC(/;"	d	file:
+ALLOC	adt/trie/trie.c	/^#define ALLOC(/;"	d	file:
+DELETE	rest/rest.h	/^	HTTPMethod DELETE;$/;"	m	struct:__anon7bdae7a60108	typeref:typename:HTTPMethod
+FT_CONFIG	config.h	/^#define FT_CONFIG$/;"	d
+FT_UNUSED	utils/macros.h	/^#define FT_UNUSED(/;"	d
+FT_UTILS_MACROS	utils/macros.h	/^#define FT_UTILS_MACROS$/;"	d
+GET	rest/rest.h	/^	HTTPMethod GET;$/;"	m	struct:__anon7bdae7a60108	typeref:typename:HTTPMethod
+HTTPHandler	rest/rest.h	/^} HTTPHandler;$/;"	t	typeref:struct:__anon7bdae7a60208
+HTTPMethod	rest/rest.h	/^typedef int (*HTTPMethod)(void* server_ctx, struct evhttp_request* request,$/;"	t	typeref:typename:int (*)(void * server_ctx,struct evhttp_request * request,int path_argc,char ** path_argv)
+HTTPMethods	rest/rest.h	/^} HTTPMethods;$/;"	t	typeref:struct:__anon7bdae7a60108
+LOGGER	utils/logger.h	/^#define LOGGER$/;"	d
+LOGGER_DEBUG	utils/logger.h	/^#define LOGGER_DEBUG(/;"	d
+LOGGER_ERROR	utils/logger.h	/^#define LOGGER_ERROR(/;"	d
+LOGGER_INFO	utils/logger.h	/^#define LOGGER_INFO(/;"	d
+LOGGER_LEVEL_DEBUG	utils/logger.h	/^#define LOGGER_LEVEL_DEBUG /;"	d
+LOGGER_LEVEL_ERROR	utils/logger.h	/^#define LOGGER_LEVEL_ERROR /;"	d
+LOGGER_LEVEL_INFO	utils/logger.h	/^#define LOGGER_LEVEL_INFO /;"	d
+LOGGER_LEVEL_WARN	utils/logger.h	/^#define LOGGER_LEVEL_WARN /;"	d
+LOGGER_LOG	utils/logger.h	/^#define LOGGER_LOG(/;"	d
+LOGGER_WARN	utils/logger.h	/^#define LOGGER_WARN(/;"	d
+LOGGING_ENABLE	config.h	/^#define LOGGING_ENABLE /;"	d
+MAX_BUFSZ	rest/main.c	/^#define MAX_BUFSZ /;"	d	file:
+POST	rest/rest.h	/^	HTTPMethod POST;$/;"	m	struct:__anon7bdae7a60108	typeref:typename:HTTPMethod
+PUT	rest/rest.h	/^	HTTPMethod PUT;$/;"	m	struct:__anon7bdae7a60108	typeref:typename:HTTPMethod
+REST_END_HANDLERS	rest/rest.h	/^#define REST_END_HANDLERS /;"	d
+REST_EVENT_BASE	rest/rest.h	/^#define REST_EVENT_BASE$/;"	d
+REST_FWD	rest/rest.h	/^#define REST_FWD$/;"	d
+REST_PATH_MAXSZ	config.h	/^#define REST_PATH_MAXSZ /;"	d
+REST_PATH_MAX_WILDCARDS	config.h	/^#define REST_PATH_MAX_WILDCARDS /;"	d
+REST_PATH_SEGMENT_WILDCARD	config.h	/^#define REST_PATH_SEGMENT_WILDCARD /;"	d
+REST_REGISTER_MODULES	rest/register_modules.h	/^#define REST_REGISTER_MODULES$/;"	d
+RestCtx	rest/rest.c	/^struct RestCtx {$/;"	s	file:
+RestCtx	rest/rest.h	/^typedef struct RestCtx RestCtx;$/;"	t	typeref:struct:RestCtx
+STACK	adt/trie/stack.h	/^#define STACK$/;"	d
+STACK_FWD	adt/trie/stack.c	/^#define STACK_FWD$/;"	d	file:
+STACK_FWD	adt/trie/stack.h	/^#define STACK_FWD$/;"	d
+STACK_OPS_FREE	adt/trie/stack.h	/^#define STACK_OPS_FREE /;"	d
+STACK_OPS_NONE	adt/trie/stack.h	/^#define STACK_OPS_NONE /;"	d
+STRING_TREE	adt/string_tree/string_tree.h	/^#define STRING_TREE$/;"	d
+STRING_TREE_FWD	adt/string_tree/string_tree.c	/^#define STRING_TREE_FWD$/;"	d	file:
+STRING_TREE_FWD	adt/string_tree/string_tree.h	/^#define STRING_TREE_FWD$/;"	d
+Stack	adt/trie/stack.c	/^typedef struct stack Stack;$/;"	t	typeref:struct:stack	file:
+Stack	adt/trie/stack.h	/^typedef struct stack Stack;$/;"	t	typeref:struct:stack
+StackElem	adt/trie/stack.c	/^} StackElem;$/;"	t	typeref:struct:stack_elem	file:
+StringTree	adt/string_tree/string_tree.c	/^struct StringTree {$/;"	s	file:
+StringTree	adt/string_tree/string_tree.c	/^typedef struct StringTree StringTree;$/;"	t	typeref:struct:StringTree	file:
+StringTree	adt/string_tree/string_tree.h	/^typedef struct StringTree StringTree;$/;"	t	typeref:struct:StringTree
+TRIE	adt/trie/trie.h	/^#define TRIE$/;"	d
+TRIE_FWD	adt/trie/trie.c	/^#define TRIE_FWD$/;"	d	file:
+TRIE_FWD	adt/trie/trie.h	/^#define TRIE_FWD$/;"	d
+TRIE_ITER_FWD	adt/trie/trie.c	/^#define TRIE_ITER_FWD$/;"	d	file:
+TRIE_ITER_FWD	adt/trie/trie.h	/^#define TRIE_ITER_FWD$/;"	d
+TRIE_OPS_FREE	adt/trie/trie.h	/^#define TRIE_OPS_FREE /;"	d
+TRIE_OPS_NONE	adt/trie/trie.h	/^#define TRIE_OPS_NONE /;"	d
+Trie	adt/trie/trie.c	/^struct Trie {$/;"	s	file:
+Trie	adt/trie/trie.c	/^typedef struct Trie Trie;$/;"	t	typeref:struct:Trie	file:
+Trie	adt/trie/trie.h	/^typedef struct Trie Trie;$/;"	t	typeref:struct:Trie
+TrieIterator	adt/trie/trie.c	/^struct TrieIterator {$/;"	s	file:
+TrieIterator	adt/trie/trie.c	/^typedef struct TrieIterator TrieIterator;$/;"	t	typeref:struct:TrieIterator	file:
+TrieIterator	adt/trie/trie.h	/^typedef struct TrieIterator TrieIterator;$/;"	t	typeref:struct:TrieIterator
+TrieNode	adt/trie/trie.c	/^typedef struct TrieNode {$/;"	s	file:
+TrieNode	adt/trie/trie.c	/^} TrieNode;$/;"	t	typeref:struct:TrieNode	file:
+TrieOps	adt/trie/trie.h	/^struct TrieOps {$/;"	s
+VALLOC	adt/trie/trie.c	/^#define VALLOC(/;"	d	file:
+__anon6fe325280108	rest/main.c	/^typedef struct {$/;"	s	file:
+__anon7bdae7a60108	rest/rest.h	/^typedef struct {$/;"	s
+__anon7bdae7a60208	rest/rest.h	/^typedef struct {$/;"	s
+add_strs	adt/trie/trie.c	/^static char* add_strs(const char* str1, const char* str2)$/;"	f	typeref:typename:char *	file:
+base	rest/rest.c	/^	struct event_base* base;$/;"	m	struct:RestCtx	typeref:struct:event_base *	file:
+captive_portal_handlers	rest/modules/captive_portal/handlers.c	/^const HTTPHandler captive_portal_handlers[] = {$/;"	v	typeref:typename:const HTTPHandler[]
+children	adt/trie/trie.c	/^	struct TrieNode* children;$/;"	m	struct:TrieNode	typeref:struct:TrieNode *	file:
+create_subtree	adt/string_tree/string_tree.c	/^static StringTree* create_subtree(StringTree* tree, const char* node)$/;"	f	typeref:typename:StringTree *	file:
+destructor_t	adt/trie/trie.c	/^typedef void (*destructor_t)(void*);$/;"	t	typeref:typename:void (*)(void *)	file:
+dtor	adt/trie/stack.h	/^	void (*dtor)(void*); \/**< Destructor for an inserted value. *\/$/;"	m	struct:stack_ops	typeref:typename:void (*)(void *)
+dtor	adt/trie/trie.h	/^	void (*dtor)(void*);       \/**< Destructor for an inserted value. *\/$/;"	m	struct:TrieOps	typeref:typename:void (*)(void *)
+event_base_create_and_init	rest/rest.c	/^static struct event_base* event_base_create_and_init()$/;"	f	typeref:struct:event_base *	file:
+find_mismatch	adt/trie/trie.c	/^static void find_mismatch(Trie* trie, const char* key, TrieNode** node_p,$/;"	f	typeref:typename:void	file:
+find_path_subtree	rest/rest.c	/^static StringTree* find_path_subtree(StringTree* tree, const char* path,$/;"	f	typeref:typename:StringTree *	file:
+generic_handler_cb	rest/rest.c	/^static void generic_handler_cb(struct evhttp_request* req, void* data)$/;"	f	typeref:typename:void	file:
+get_method_str	rest/rest.c	/^static const char* get_method_str(enum evhttp_cmd_type method)$/;"	f	typeref:typename:const char *	file:
+get_path_subtree	rest/rest.c	/^static StringTree* get_path_subtree(StringTree* tree, const char* path)$/;"	f	typeref:typename:StringTree *	file:
+get_request_path	rest/rest.c	/^static char* get_request_path(struct evhttp_request* req)$/;"	f	typeref:typename:char *	file:
+handle_get	rest/main.c	/^int handle_get(void* data, struct evhttp_request* req, int argc, char** argv)$/;"	f	typeref:typename:int
+handle_signal	rest/rest.c	/^static void handle_signal(int sig, short events, void* data)$/;"	f	typeref:typename:void	file:
+handlers	rest/rest.c	/^	StringTree* handlers;$/;"	m	struct:RestCtx	typeref:typename:StringTree *	file:
+head	adt/trie/stack.c	/^	StackElem* head;$/;"	m	struct:stack	typeref:typename:StackElem *	file:
+http	rest/rest.c	/^	struct evhttp* http;$/;"	m	struct:RestCtx	typeref:struct:evhttp *	file:
+key	adt/trie/trie.c	/^	char* key;$/;"	m	struct:TrieIterator	typeref:typename:char *	file:
+key_add_segment	adt/trie/trie.c	/^static inline char* key_add_segment(char* key, const char* segment,$/;"	f	typeref:typename:char *	file:
+key_buffer_create	adt/trie/trie.c	/^static inline char* key_buffer_create(size_t max_keylen)$/;"	f	typeref:typename:char *	file:
+keyptr_stack	adt/trie/trie.c	/^	Stack *node_stack, *keyptr_stack;$/;"	m	struct:TrieIterator	typeref:typename:Stack **	file:
+last_message	rest/main.c	/^	char* last_message;$/;"	m	struct:__anon6fe325280108	typeref:typename:char *	file:
+leq_child	adt/trie/trie.c	/^static inline TrieNode* leq_child(TrieNode* node, char find)$/;"	f	typeref:typename:TrieNode *	file:
+log_levels	utils/logger.c	/^static unsigned int log_levels = LOGGER_LEVEL_DEBUG | LOGGER_LEVEL_INFO |$/;"	v	typeref:typename:unsigned int	file:
+logger_close	utils/logger.c	/^void logger_close(void)$/;"	f	typeref:typename:void
+logger_fp	utils/logger.c	/^static FILE* logger_fp = NULL;$/;"	v	typeref:typename:FILE *	file:
+logger_get_file	utils/logger.c	/^FILE* logger_get_file(void) { return logger_fp; }$/;"	f	typeref:typename:FILE *
+logger_has_level	utils/logger.c	/^int logger_has_level(unsigned int level) { return log_levels & level; }$/;"	f	typeref:typename:int
+logger_log_to_stderr	utils/logger.c	/^void logger_log_to_stderr(void)$/;"	f	typeref:typename:void
+logger_log_to_stdout	utils/logger.c	/^void logger_log_to_stdout(void)$/;"	f	typeref:typename:void
+logger_set_filepath	utils/logger.c	/^int logger_set_filepath(const char* path)$/;"	f	typeref:typename:int
+logger_set_levels	utils/logger.c	/^void logger_set_levels(unsigned int levels) { log_levels = levels; }$/;"	f	typeref:typename:void
+logger_set_min_level	utils/logger.c	/^void logger_set_min_level(unsigned int level) { log_levels = (level << 1) - 1; }$/;"	f	typeref:typename:void
+main	rest/main.c	/^int main(void)$/;"	f	typeref:typename:int
+max_keylen	adt/trie/trie.c	/^	size_t max_keylen;$/;"	m	struct:TrieIterator	typeref:typename:size_t	file:
+max_keylen_added	adt/trie/trie.c	/^	size_t max_keylen_added;$/;"	m	struct:Trie	typeref:typename:size_t	file:
+memusage	adt/trie/trie.h	/^	size_t (*memusage)(void*); \/**< Memory usage evaluator for values. *\/$/;"	m	struct:TrieOps	typeref:typename:size_t (*)(void *)
+memusage_t	adt/trie/trie.c	/^typedef size_t (*memusage_t)(void*);$/;"	t	typeref:typename:size_t (*)(void *)	file:
+methods	rest/rest.h	/^	HTTPMethods methods;$/;"	m	struct:__anon7bdae7a60208	typeref:typename:HTTPMethods
+n_children	adt/trie/trie.c	/^	size_t n_children;$/;"	m	struct:TrieNode	typeref:typename:size_t	file:
+next	adt/trie/stack.c	/^	struct stack_elem* next;$/;"	m	struct:stack_elem	typeref:struct:stack_elem *	file:
+node_addchild	adt/trie/trie.c	/^static int node_addchild(TrieNode* node, TrieNode* new_child)$/;"	f	typeref:typename:int	file:
+node_branch	adt/trie/trie.c	/^static int node_branch(TrieNode* node, char* at, TrieNode* child)$/;"	f	typeref:typename:int	file:
+node_create	adt/trie/trie.c	/^static TrieNode* node_create(char* segment, void* value)$/;"	f	typeref:typename:TrieNode *	file:
+node_delchild	adt/trie/trie.c	/^static int node_delchild(TrieNode* node, TrieNode* child, destructor_t dtor)$/;"	f	typeref:typename:int	file:
+node_fork	adt/trie/trie.c	/^static int node_fork(TrieNode* node, char* at, TrieNode* new_child)$/;"	f	typeref:typename:int	file:
+node_memory_usage	adt/trie/trie.c	/^static size_t node_memory_usage(TrieNode* node, memusage_t val_usage)$/;"	f	typeref:typename:size_t	file:
+node_merge	adt/trie/trie.c	/^static int node_merge(TrieNode* node, destructor_t dtor)$/;"	f	typeref:typename:int	file:
+node_recursive_free	adt/trie/trie.c	/^static void node_recursive_free(TrieNode* node, destructor_t dtor)$/;"	f	typeref:typename:void	file:
+node_split	adt/trie/trie.c	/^static int node_split(TrieNode* node, char* at)$/;"	f	typeref:typename:int	file:
+node_stack	adt/trie/trie.c	/^	Stack *node_stack, *keyptr_stack;$/;"	m	struct:TrieIterator	typeref:typename:Stack *	file:
+ops	adt/trie/stack.c	/^	struct stack_ops ops;$/;"	m	struct:stack	typeref:struct:stack_ops	file:
+ops	adt/trie/trie.c	/^	struct TrieOps* ops;$/;"	m	struct:Trie	typeref:struct:TrieOps *	file:
+path	rest/rest.h	/^	const char* path;$/;"	m	struct:__anon7bdae7a60208	typeref:typename:const char *
+path_argv_create	rest/rest.c	/^static char** path_argv_create(int size)$/;"	f	typeref:typename:char **	file:
+path_argv_destroy	rest/rest.c	/^static void path_argv_destroy(int argc, char** argv)$/;"	f	typeref:typename:void	file:
+pflen_equal	adt/trie/trie.c	/^static inline ptrdiff_t pflen_equal(const char* of, const char* with)$/;"	f	typeref:typename:ptrdiff_t	file:
+probe_handler	rest/modules/captive_portal/handlers.c	/^static int probe_handler(void* server_ctx, struct evhttp_request* req,$/;"	f	typeref:typename:int	file:
+raw_node_destroy	adt/trie/trie.c	/^static void raw_node_destroy(TrieNode* node)$/;"	f	typeref:typename:void	file:
+register_single_handler	rest/rest.c	/^static int register_single_handler(const HTTPHandler* handler, RestCtx* ctx)$/;"	f	typeref:typename:int	file:
+request_counter	rest/main.c	/^	int request_counter;$/;"	m	struct:__anon6fe325280108	typeref:typename:int	file:
+rest_bind_addr	rest/rest.c	/^int rest_bind_addr(const char* ip, int port, RestCtx* ctx)$/;"	f	typeref:typename:int
+rest_bind_state	rest/rest.c	/^void rest_bind_state(void* server_ctx, RestCtx* ctx)$/;"	f	typeref:typename:void
+rest_ctx_create	rest/rest.c	/^RestCtx* rest_ctx_create()$/;"	f	typeref:typename:RestCtx *
+rest_ctx_destroy	rest/rest.c	/^void rest_ctx_destroy(RestCtx* ctx)$/;"	f	typeref:typename:void
+rest_dispatch	rest/rest.c	/^int rest_dispatch(RestCtx* ctx)$/;"	f	typeref:typename:int
+rest_loopbreak	rest/rest.c	/^int rest_loopbreak(RestCtx* ctx)$/;"	f	typeref:typename:int
+rest_register_all_modules	rest/register_modules.c	/^int rest_register_all_modules(RestCtx* ctx)$/;"	f	typeref:typename:int
+rest_register_handlers	rest/rest.c	/^int rest_register_handlers(const HTTPHandler handlers[], RestCtx* ctx)$/;"	f	typeref:typename:int
+root	adt/trie/trie.c	/^	TrieNode* root;$/;"	m	struct:Trie	typeref:typename:TrieNode *	file:
+segment	adt/trie/trie.c	/^	char* segment;$/;"	m	struct:TrieNode	typeref:typename:char *	file:
+segncpy	adt/trie/trie.c	/^static inline char* segncpy(char* dest, const char* src, size_t n)$/;"	f	typeref:typename:char *	file:
+server_ctx	rest/rest.c	/^	void* server_ctx;$/;"	m	struct:RestCtx	typeref:typename:void *	file:
+server_data	rest/main.c	/^} server_data;$/;"	t	typeref:struct:__anon6fe325280108	file:
+stack	adt/trie/stack.c	/^struct stack {$/;"	s	file:
+stack_create	adt/trie/stack.c	/^Stack* stack_create(const struct stack_ops ops)$/;"	f	typeref:typename:Stack *
+stack_destroy	adt/trie/stack.c	/^void stack_destroy(Stack* s)$/;"	f	typeref:typename:void
+stack_elem	adt/trie/stack.c	/^typedef struct stack_elem {$/;"	s	file:
+stack_empty	adt/trie/stack.c	/^bool stack_empty(Stack* s) { return s->head == NULL; }$/;"	f	typeref:typename:bool
+stack_makeops	adt/trie/stack.h	/^static inline struct stack_ops stack_makeops(void (*dtor)(void*))$/;"	f	typeref:struct:stack_ops
+stack_ops	adt/trie/stack.h	/^struct stack_ops {$/;"	s
+stack_pop	adt/trie/stack.c	/^void* stack_pop(Stack* s)$/;"	f	typeref:typename:void *
+stack_push	adt/trie/stack.c	/^int stack_push(Stack* s, void* data)$/;"	f	typeref:typename:int
+stack_top	adt/trie/stack.c	/^void* stack_top(Stack* s) { return s->head ? s->head->val : NULL; }$/;"	f	typeref:typename:void *
+str_dup	adt/trie/trie.c	/^static char* str_dup(const char* str)$/;"	f	typeref:typename:char *	file:
+str_n_dup	adt/trie/trie.c	/^static char* str_n_dup(const char* str, size_t n)$/;"	f	typeref:typename:char *	file:
+str_n_dup	rest/main.c	/^static char* str_n_dup(const char* str, size_t n)$/;"	f	typeref:typename:char *	file:
+str_n_dup	rest/rest.c	/^static char* str_n_dup(const char* str, size_t n)$/;"	f	typeref:typename:char *	file:
+string_tree_create	adt/string_tree/string_tree.c	/^StringTree* string_tree_create()$/;"	f	typeref:typename:StringTree *
+string_tree_destroy	adt/string_tree/string_tree.c	/^void string_tree_destroy(StringTree* tree)$/;"	f	typeref:typename:void
+string_tree_find_subtree	adt/string_tree/string_tree.c	/^StringTree* string_tree_find_subtree(const StringTree* tree, const char* node)$/;"	f	typeref:typename:StringTree *
+string_tree_get_subtree	adt/string_tree/string_tree.c	/^StringTree* string_tree_get_subtree(StringTree* tree, const char* node)$/;"	f	typeref:typename:StringTree *
+string_tree_get_value	adt/string_tree/string_tree.c	/^void* string_tree_get_value(StringTree* tree)$/;"	f	typeref:typename:void *
+string_tree_set_value	adt/string_tree/string_tree.c	/^void string_tree_set_value(StringTree* tree, void* value)$/;"	f	typeref:typename:void
+subtrees	adt/string_tree/string_tree.c	/^	Trie* subtrees;$/;"	m	struct:StringTree	typeref:typename:Trie *	file:
+trie_create	adt/trie/trie.c	/^Trie* trie_create(const struct TrieOps ops)$/;"	f	typeref:typename:Trie *
+trie_delete	adt/trie/trie.c	/^int trie_delete(Trie* trie, char* key)$/;"	f	typeref:typename:int
+trie_destroy	adt/trie/trie.c	/^void trie_destroy(Trie* trie)$/;"	f	typeref:typename:void
+trie_find	adt/trie/trie.c	/^void* trie_find(Trie* trie, char* key)$/;"	f	typeref:typename:void *
+trie_findall	adt/trie/trie.c	/^TrieIterator* trie_findall(Trie* trie, const char* key_prefix,$/;"	f	typeref:typename:TrieIterator *
+trie_insert	adt/trie/trie.c	/^int trie_insert(Trie* trie, char* key, void* val)$/;"	f	typeref:typename:int
+trie_iter_create	adt/trie/trie.c	/^static TrieIterator* trie_iter_create(const char* truncated_prefix,$/;"	f	typeref:typename:TrieIterator *	file:
+trie_iter_destroy	adt/trie/trie.c	/^void trie_iter_destroy(TrieIterator* iter)$/;"	f	typeref:typename:void
+trie_iter_getkey	adt/trie/trie.c	/^const char* trie_iter_getkey(const TrieIterator* iter)$/;"	f	typeref:typename:const char *
+trie_iter_getval	adt/trie/trie.c	/^void* trie_iter_getval(const TrieIterator* iter)$/;"	f	typeref:typename:void *
+trie_iter_next	adt/trie/trie.c	/^void trie_iter_next(TrieIterator** iter_p)$/;"	f	typeref:typename:void
+trie_iter_step	adt/trie/trie.c	/^static bool trie_iter_step(TrieIterator** iter_p)$/;"	f	typeref:typename:bool	file:
+trie_makeops	adt/trie/trie.h	/^static inline struct TrieOps trie_makeops(void (*dtor)(void*),$/;"	f	typeref:struct:TrieOps
+trie_maxkeylen_added	adt/trie/trie.c	/^size_t trie_maxkeylen_added(Trie* trie) { return trie->max_keylen_added; }$/;"	f	typeref:typename:size_t
+trie_memory_usage	adt/trie/trie.c	/^size_t trie_memory_usage(const Trie* trie)$/;"	f	typeref:typename:size_t
+val	adt/string_tree/string_tree.c	/^	void* val;$/;"	m	struct:StringTree	typeref:typename:void *	file:
+val	adt/trie/stack.c	/^	void* val;$/;"	m	struct:stack_elem	typeref:typename:void *	file:
+val_insert	adt/trie/trie.c	/^static void val_insert(TrieNode* node, void* val, destructor_t dtor)$/;"	f	typeref:typename:void	file:
+value	adt/trie/trie.c	/^	void* value;$/;"	m	struct:TrieIterator	typeref:typename:void *	file:
+value	adt/trie/trie.c	/^	void* value;$/;"	m	struct:TrieNode	typeref:typename:void *	file:
