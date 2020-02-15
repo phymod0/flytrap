@@ -6,6 +6,8 @@ add_library(flytrap
     src/adt/trie/stack.c
     src/adt/trie/trie.c
     src/rest/rest.c
+    src/rest/register_modules.c
+    src/rest/modules/captive_portal/handlers.c
     src/utils/logger.c
 )
 
