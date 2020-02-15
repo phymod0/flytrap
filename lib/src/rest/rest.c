@@ -392,11 +392,12 @@ static void generic_handler_cb(struct evhttp_request* req, void* data)
 		goto done;
 	}
 
-	if (method_fn(ctx->server_ctx, req, argc, argv) < 0) {
+	if (method_fn(ctx->server_ctx, req, argc, argv) != 0) {
 		LOGGER_INFO("%s %s raised an internal error", method_str, path);
 		evhttp_send_error(req, HTTP_INTERNAL, "Internal error");
 		goto done;
 	}
+	LOGGER_INFO("%s %s succeeded with return value 0", method_str, path);
 
 done:
 	path_argv_destroy(argc, argv);
