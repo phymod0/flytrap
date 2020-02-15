@@ -8,9 +8,9 @@
 static int probe_handler(void* server_ctx, struct evhttp_request* req,
 			 int path_argc, char** path_argv)
 {
-	(void)(server_ctx);
-	(void)(path_argc);
-	(void)(path_argv);
+	FT_UNUSED(server_ctx);
+	FT_UNUSED(path_argc);
+	FT_UNUSED(path_argv);
 
 	int ret;
 	struct evbuffer* response_buffer = NULL;

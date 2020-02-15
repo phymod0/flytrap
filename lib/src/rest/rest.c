@@ -7,6 +7,7 @@
 #include "../adt/string_tree/string_tree.h"
 #include "../config.h"
 #include "../utils/logger.h"
+#include "../utils/macros.h"
 #include "rest.h"
 
 
@@ -266,11 +267,12 @@ static int register_single_handler(const HTTPHandler* handler, RestCtx* ctx)
 
 static void handle_signal(int sig, short events, void* data)
 {
+	FT_UNUSED(sig);
+	FT_UNUSED(events);
+
 	struct event_base* base = data;
 	event_base_loopbreak(base);
 	LOGGER_INFO("Terminating event loop due to signal %i", sig);
-	(void)sig;
-	(void)events;
 }
 
 
