@@ -1,3 +1,4 @@
 build/
 .clangd/
 !.clang-format
+lib/src/rest/test
