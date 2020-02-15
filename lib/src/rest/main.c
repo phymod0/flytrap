@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "../utils/logger.h"
+#include "register_modules.h"
 #include "rest.h"
 
 
@@ -69,21 +70,10 @@ int main(void)
 		goto err;
 	}
 	rest_bind_state(&server_data, ctx);
-	res = rest_register_handlers(
-	    (HTTPHandler[]){
-		{
-		    "/api/<?>/login",
-		    {
-			.GET = handle_get,
-		    },
-		},
-		REST_END_HANDLERS,
-	    },
-	    ctx);
-	if (res < 0) {
+	if ((res = rest_register_all_modules(ctx)) < 0) {
 		goto err;
 	}
-	if ((res = rest_bind_addr("localhost", port, ctx)) < 0) {
+	if ((res = rest_bind_addr("192.168.1.1", port, ctx)) < 0) {
 		goto err;
 	}
 	if ((res = rest_dispatch(ctx)) != 0) {
