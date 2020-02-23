@@ -17,6 +17,10 @@ int rest_register_all_modules(RestCtx* ctx)
 
 	REGISTER_MODULE_HANDLERS(captive_portal_handlers);
 
+	int document_request_handler(void*, struct evhttp_request*,
+				     const char*);
+	rest_set_file_handler_cb(document_request_handler, ctx);
+
 	LOGGER_INFO("Modules registered");
 	return 0;
 
