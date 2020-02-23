@@ -28,7 +28,7 @@
 
 #ifndef DEFAULT_DOCROOT
 #ifdef _WIN32
-#define DEFAULT_DOCROOT "%UserProfile%\Desktop\flytrap\"
+#define DEFAULT_DOCROOT "\%UserProfile\%\\Desktop\\flytrap\\"
 #elif defined(__APPLE__) || defined(__MACH__)
 #define DEFAULT_DOCROOT "~/Desktop/flytrap/"
 #elif defined(__unix__) || defined(__linux__)
