@@ -15,6 +15,7 @@ struct RestCtx {
 	struct event_base* base;
 	struct evhttp* http;
 	StringTree* handlers;
+	HTTPFileRequestHandler file_request_handler;
 	void* server_ctx;
 };
 
@@ -29,6 +30,9 @@ static int register_single_handler(const HTTPHandler* handler, RestCtx* ctx);
 static void handle_signal(int sig, short events, void* data);
 static const char* get_method_str(enum evhttp_cmd_type method);
 static char* get_request_path(struct evhttp_request* req);
+static int validate_path(const char* path);
+static void document_request_cb(struct evhttp_request* req, const char* path,
+				RestCtx* ctx);
 static void generic_handler_cb(struct evhttp_request* req, void* data);
 static struct event_base* event_base_create_and_init();
 
@@ -52,6 +56,7 @@ RestCtx* rest_ctx_create()
 	evhttp_set_gencb(http, generic_handler_cb, ctx);
 	ctx->http = http;
 	ctx->handlers = handlers;
+	ctx->file_request_handler = NULL;
 	ctx->server_ctx = NULL;
 	return ctx;
 
@@ -97,6 +102,12 @@ int rest_register_handlers(const HTTPHandler handlers[], RestCtx* ctx)
 			    handler->methods.DELETE ? " DELETE" : "");
 	}
 	return 0;
+}
+
+
+void rest_set_file_handler_cb(HTTPFileRequestHandler handler, RestCtx* ctx)
+{
+	ctx->file_request_handler = handler;
 }
 
 
@@ -333,6 +344,32 @@ err:
 }
 
 
+static int validate_path(const char* path)
+{
+	/* TODO(phymod0): Find a better way */
+	return strstr(path, "..") ? -1 : 0;
+}
+
+
+static void document_request_cb(struct evhttp_request* req, const char* path,
+				RestCtx* ctx)
+{
+	HTTPFileRequestHandler handler = ctx->file_request_handler;
+	if (!handler) {
+		LOGGER_INFO("No document found at path %s", path);
+		evhttp_send_error(req, HTTP_NOTFOUND, "Not found");
+	} else if (validate_path(path) < 0) {
+		LOGGER_INFO("Rejected path %s", path);
+		evhttp_send_error(req, HTTP_BADREQUEST, "Bad request");
+	} else if (handler(ctx->server_ctx, req, path) != 0) {
+		LOGGER_ERROR("Exception in document request handler");
+		evhttp_send_error(req, HTTP_INTERNAL, "Internal error");
+	} else {
+		LOGGER_INFO("Document request handler ran without errors");
+	}
+}
+
+
 static void generic_handler_cb(struct evhttp_request* req, void* data)
 {
 	RestCtx* ctx;
@@ -365,8 +402,8 @@ static void generic_handler_cb(struct evhttp_request* req, void* data)
 	if (!(handlers =
 		  find_path_subtree(ctx->handlers, path, &argc, &argv)) ||
 	    !(methods = string_tree_get_value(handlers))) {
-		LOGGER_INFO("Requested path %s not found", path);
-		evhttp_send_error(req, HTTP_NOTFOUND, "Path not found");
+		LOGGER_DEBUG("Treating %s as a path to a document", path);
+		document_request_cb(req, path, ctx);
 		goto done;
 	}
 

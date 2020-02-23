@@ -17,6 +17,18 @@
 typedef int (*HTTPMethod)(void* server_ctx, struct evhttp_request* request,
 			  int path_argc, char** path_argv);
 
+/**
+ * HTTP file request handler type.
+ *
+ * @param server_ctx Server state passed to <code>rest_bind_state</code>
+ * @param request libevent request object for the HTTP request in context
+ * @param path Path requested from the client
+ * @returns 0 on successful execution, or -1 to indicate a 5XX error
+ */
+typedef int (*HTTPFileRequestHandler)(void* server_ctx,
+				      struct evhttp_request* request,
+				      const char* path);
+
 /** Set of HTTP methods */
 typedef struct {
 	HTTPMethod POST;
@@ -60,12 +72,20 @@ RestCtx* rest_ctx_create();
 void rest_ctx_destroy(RestCtx* ctx);
 
 /**
- * Register all paths to handle.
+ * Register a list of paths to handle.
  *
  * @param handlers Array of <code>HTTPHandler</code> objects
  * @returns 0 on success, -1 on failure
  */
 int rest_register_handlers(const HTTPHandler handlers[], RestCtx* ctx);
+
+/**
+ * Set the file request handler callback.
+ *
+ * @param handlers Array of <code>HTTPHandler</code> objects
+ * @returns 0 on success, -1 on failure
+ */
+void rest_set_file_handler_cb(HTTPFileRequestHandler handler, RestCtx* ctx);
 
 /**
  * Bind a REST event base to a TCP IP/port.
