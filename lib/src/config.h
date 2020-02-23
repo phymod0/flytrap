@@ -36,6 +36,9 @@
 #elif defined(__ANDROID__)
 /* TODO(phymod0) Define the default document root for android */
 #error Define the default document root for android
+#else
+#error Unsupported platform
+#endif
 #endif /* DEFAULT_DOCROOT */
 
 
