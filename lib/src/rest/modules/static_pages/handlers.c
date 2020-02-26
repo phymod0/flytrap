@@ -62,8 +62,9 @@ static char* add_strs(const char* str1, const char* str2)
 	if (!result) {
 		return NULL;
 	}
-	strncpy(result, str1, len1);
-	strncpy(result + len1, str2, len2);
+	memcpy(result, str1, len1);
+	memcpy(result + len1, str2, len2);
+	result[len1 + len2] = '\0';
 	return result;
 }
 
