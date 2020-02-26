@@ -1,8 +1,23 @@
 [
 {
   "directory": "/root/dev/flytrap/build/lib",
-  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/adt/string_tree/string_tree.c.o   -c /root/dev/flytrap/lib/src/adt/string_tree/string_tree.c",
-  "file": "/root/dev/flytrap/lib/src/adt/string_tree/string_tree.c"
+  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/rest/register_modules.c.o   -c /root/dev/flytrap/lib/src/rest/register_modules.c",
+  "file": "/root/dev/flytrap/lib/src/rest/register_modules.c"
+},
+{
+  "directory": "/root/dev/flytrap/build/lib",
+  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/rest/modules/static_pages/handlers.c.o   -c /root/dev/flytrap/lib/src/rest/modules/static_pages/handlers.c",
+  "file": "/root/dev/flytrap/lib/src/rest/modules/static_pages/handlers.c"
+},
+{
+  "directory": "/root/dev/flytrap/build/lib",
+  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/rest/modules/captive_portal/handlers.c.o   -c /root/dev/flytrap/lib/src/rest/modules/captive_portal/handlers.c",
+  "file": "/root/dev/flytrap/lib/src/rest/modules/captive_portal/handlers.c"
+},
+{
+  "directory": "/root/dev/flytrap/build/lib",
+  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/rest/rest.c.o   -c /root/dev/flytrap/lib/src/rest/rest.c",
+  "file": "/root/dev/flytrap/lib/src/rest/rest.c"
 },
 {
   "directory": "/root/dev/flytrap/build/lib",
@@ -16,18 +31,8 @@
 },
 {
   "directory": "/root/dev/flytrap/build/lib",
-  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/rest/rest.c.o   -c /root/dev/flytrap/lib/src/rest/rest.c",
-  "file": "/root/dev/flytrap/lib/src/rest/rest.c"
-},
-{
-  "directory": "/root/dev/flytrap/build/lib",
-  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/rest/register_modules.c.o   -c /root/dev/flytrap/lib/src/rest/register_modules.c",
-  "file": "/root/dev/flytrap/lib/src/rest/register_modules.c"
-},
-{
-  "directory": "/root/dev/flytrap/build/lib",
-  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/rest/modules/captive_portal/handlers.c.o   -c /root/dev/flytrap/lib/src/rest/modules/captive_portal/handlers.c",
-  "file": "/root/dev/flytrap/lib/src/rest/modules/captive_portal/handlers.c"
+  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3   -o CMakeFiles/flytrap.dir/src/adt/string_tree/string_tree.c.o   -c /root/dev/flytrap/lib/src/adt/string_tree/string_tree.c",
+  "file": "/root/dev/flytrap/lib/src/adt/string_tree/string_tree.c"
 },
 {
   "directory": "/root/dev/flytrap/build/lib",
