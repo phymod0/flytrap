@@ -42,10 +42,26 @@ oom:
 void string_tree_destroy(StringTree* tree)
 {
 	LOGGER_DEBUG("Destroying string tree");
-	if (tree) {
-		trie_destroy(tree->subtrees);
-		free(tree);
+
+	Trie* subtrees;
+	size_t max_keylen;
+	TrieIterator* iterator;
+
+	if (tree == NULL) {
+		return;
 	}
+
+	subtrees = tree->subtrees;
+	max_keylen = trie_maxkeylen_added(subtrees);
+	iterator = trie_findall(subtrees, "", max_keylen);
+	while (iterator) {
+		StringTree* subtree = trie_iter_getval(iterator);
+		string_tree_destroy(subtree);
+		trie_iter_next(&iterator);
+	}
+
+	trie_destroy(subtrees);
+	free(tree);
 }
 
 
