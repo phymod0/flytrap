@@ -34,12 +34,12 @@ err:
 
 
 const HTTPHandler captive_portal_handlers[] = {
-    // Android/Chrome
+    // Android
     {"/generate_204", {.GET = probe_handler}},
-    // iOS
+    // iOS, OSX
     {"/hotspot-detect.html", {.GET = probe_handler}},
-    // TODO(phymod0): Windows
-    // TODO(phymod0): OSX
-    // TODO(phymod0): Other android devices?
+    // Windows
+    {"/ncsi.txt", {.GET = probe_handler}},
+    {"/connecttest.txt", {.GET = probe_handler}},
     REST_END_HANDLERS,
 };
