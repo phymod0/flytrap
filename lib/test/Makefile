@@ -3,7 +3,7 @@ FLAGS := -g -Wall -Werror -Wextra -fsanitize=address -fsanitize=undefined \
 		-Winline # -O3 -finline-functions -Winline
 FLAGS += $(patsubst %,-I%,$(INCLUDE_DIRS))
 
-C_FLAGS := $(FLAGS) -std=c99
+C_FLAGS := $(FLAGS) -std=c99 -levent
 
 C_SRC_FILES := $(wildcard test*.c)
 C_TESTS := $(patsubst %.c,%,$(C_SRC_FILES))

@@ -20,7 +20,7 @@ struct RestCtx {
 };
 
 
-static char* str_n_dup(const char* str, size_t n);
+static char* str_ndup(const char* str, size_t n);
 static StringTree* get_path_subtree(StringTree* tree, const char* path);
 static char** path_argv_create(int size);
 static void path_argv_destroy(int argc, char** argv);
@@ -147,7 +147,7 @@ int rest_loopbreak(RestCtx* ctx)
 }
 
 
-static char* str_n_dup(const char* str, size_t n)
+static char* str_ndup(const char* str, size_t n)
 {
 	size_t len = strlen(str);
 	size_t min = len < n ? len : n;
@@ -162,7 +162,7 @@ static char* str_n_dup(const char* str, size_t n)
 
 static StringTree* get_path_subtree(StringTree* tree, const char* path)
 {
-	char* _path = str_n_dup(path, REST_PATH_MAXSZ);
+	char* _path = str_ndup(path, REST_PATH_MAXSZ);
 	if (!_path) {
 		goto err;
 	}
@@ -209,7 +209,7 @@ static StringTree* find_path_subtree(StringTree* tree, const char* path,
 	char** argv = NULL;
 	int argc;
 
-	if (!(dup_path = str_n_dup(path, REST_PATH_MAXSZ))) {
+	if (!(dup_path = str_ndup(path, REST_PATH_MAXSZ))) {
 		goto oom;
 	}
 	if (!(argv = path_argv_create(REST_PATH_MAX_WILDCARDS))) {
@@ -235,7 +235,7 @@ static StringTree* find_path_subtree(StringTree* tree, const char* path,
 			LOGGER_WARN("Wildcard table is full");
 			continue;
 		}
-		if (!(argv[argc++] = str_n_dup(tok, REST_PATH_MAXSZ))) {
+		if (!(argv[argc++] = str_ndup(tok, REST_PATH_MAXSZ))) {
 			goto oom;
 		}
 	}
@@ -384,6 +384,10 @@ static void generic_handler_cb(struct evhttp_request* req, void* data)
 	StringTree* handlers;
 	HTTPMethods* methods;
 	HTTPMethod method_fn;
+
+#if LOGGING_ENABLE == 0
+	FT_UNUSED(method_str);
+#endif /* LOGGING_ENABLE */
 
 	ctx = data;
 	conn = evhttp_request_get_connection(req);
