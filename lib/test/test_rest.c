@@ -268,7 +268,7 @@ TEST_DEFINE(test_find_path_subtree, res)
 		string_tree_destroy(tree);
 	}
 
-	// TODO: Remaining checks
+	// TODO(phymod0): Remaining checks
 
 	test_check(res, "Allocations succeeded", allocation_success);
 	test_check(res, "Wildcard segments matched", wildcard_matched);
