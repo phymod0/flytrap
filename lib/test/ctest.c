@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 
 #define PSTDOUT(...) fprintf(stdout, __VA_ARGS__)
 #define PSTDERR(...) fprintf(stderr, __VA_ARGS__)
@@ -13,12 +12,12 @@
 #define YELLOW "\x1B[33m"
 #define RESET "\033[01;37m"
 
-typedef struct test_result {
+struct test_result {
 	const char* test_name;
 	unsigned long long passed, total;
 	const char* failed_checknames[MAX_CHECKNAMES_PER_UNIT];
 	unsigned long long n_failed_names;
-} test_result_t;
+};
 
 static const char* status_str(bool condition)
 {
@@ -29,22 +28,23 @@ static void print_test_results(test_result_t* result)
 {
 	const char* status = status_str(result->passed == result->total);
 	const char* test_name = result->test_name;
-	if (!test_name)
+	if (!test_name) {
 		test_name = "(unnamed)";
-	PSTDOUT("[%s] Test %s: %llu/%llu checks passed\n", status, test_name,
+	}
+	PSTDOUT("[%s] %s: %llu/%llu checks passed\n", status, test_name,
 		result->passed, result->total);
-	if (result->n_failed_names == 0)
+	if (result->n_failed_names == 0) {
 		return;
+	}
 	for (unsigned long long i = 0; i < result->n_failed_names; ++i) {
 		PSTDOUT("\t[" RED "Failed #%llu" RESET "] ", i + 1);
 		PSTDOUT("%s\n", result->failed_checknames[i]);
 	}
 }
 
+
 static bool run_single_test(test_t test)
 {
-	srand(time(NULL));
-
 	test_result_t result;
 	for (int i = 0; i < N_RUNS_PER_TEST; ++i) {
 		result.passed = 0;
@@ -53,8 +53,9 @@ static bool run_single_test(test_t test)
 		       sizeof result.failed_checknames);
 		result.n_failed_names = 0;
 		test(&result);
-		if (result.passed != result.total)
+		if (result.passed != result.total) {
 			break;
+		}
 	}
 	print_test_results(&result);
 
@@ -63,20 +64,24 @@ static bool run_single_test(test_t test)
 
 static void print_bar(const char* color, const char* hdr)
 {
-	size_t hdr_len = strlen(hdr), n_dashes = PRINT_WIDTH - 4 - hdr_len;
-	for (size_t i = 0; i < (n_dashes + 1) / 2; ++i)
+	size_t hdr_len = strlen(hdr);
+	size_t n_dashes = PRINT_WIDTH - 4 - hdr_len;
+	for (size_t i = 0; i < (n_dashes + 1) / 2; ++i) {
 		PSTDOUT("-");
+	}
 	PSTDOUT("[ %s%s%s ]", color, hdr, RESET);
-	for (size_t i = 0; i < n_dashes / 2; ++i)
+	for (size_t i = 0; i < n_dashes / 2; ++i) {
 		PSTDOUT("-");
+	}
 	PSTDOUT("\n");
 }
 
 void test_acheck(test_result_t* result, bool check)
 {
 	++result->total;
-	if (check)
+	if (check) {
 		++result->passed;
+	}
 }
 
 void test_check(test_result_t* result, const char* name, bool check)
@@ -86,10 +91,11 @@ void test_check(test_result_t* result, const char* name, bool check)
 		++result->passed;
 		return;
 	}
-	if (result->n_failed_names < MAX_CHECKNAMES_PER_UNIT)
+	if (result->n_failed_names < MAX_CHECKNAMES_PER_UNIT) {
 		result->failed_checknames[result->n_failed_names++] = name;
-	else
+	} else {
 		PSTDERR("Cannot record check failure name (buffer full).\n");
+	}
 }
 
 void test_name(test_result_t* result, const char* name)
@@ -102,9 +108,11 @@ int test_run(const test_t* tests, size_t n_tests, const char* module_name)
 	size_t n_passed = 0;
 	PSTDOUT(RESET "\n");
 	print_bar(RESET, module_name);
-	for (size_t i = 0; i < n_tests; ++i)
-		if (run_single_test(tests[i]))
+	for (size_t i = 0; i < n_tests; ++i) {
+		if (run_single_test(tests[i])) {
 			++n_passed;
+		}
+	}
 	bool passed = n_passed == n_tests;
 	char result[PRINT_WIDTH - 4];
 	snprintf(result, sizeof result, "Passed %lu/%lu", n_passed, n_tests);
