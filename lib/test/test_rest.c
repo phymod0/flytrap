@@ -5,6 +5,7 @@
 #include "../src/adt/trie/trie.c"
 #include "../src/rest/rest.c"
 
+#define WITHOUT_CTEST_NAMESPACE
 #include "ctest.h"
 
 #include <stdio.h>
@@ -131,40 +132,47 @@ static void free_path_segments(char** segments)
 }
 
 
-TEST_DEFINE(test_str_ndup, res)
+DEFINE_TEST(test_str_ndup)
 {
-	TEST_AUTONAME(res);
+	DESCRIBE_TEST("Unit test for str_ndup");
+
+	DEFINE_CHECK(correct_result_length, "Result length is always correct");
+	DEFINE_CHECK(result_is_prefix,
+		     "Result is always a prefix of its input");
 
 	char* to_dup = rand_str();
 	size_t to_dup_len = strlen(to_dup);
-	bool correct_result_length = true;
-	bool result_is_prefix = true;
 
 	for (size_t len = 0; len < 2 * to_dup_len; ++len) {
 		char* dup = str_ndup(to_dup, len);
 		if (len < to_dup_len) {
-			correct_result_length &= strlen(dup) == len;
+			CHECK_INCLUDE(correct_result_length,
+				      strlen(dup) == len);
 		} else {
-			correct_result_length &= strlen(dup) == to_dup_len;
+			CHECK_INCLUDE(correct_result_length,
+				      strlen(dup) == to_dup_len);
 		}
-		result_is_prefix &= strstr(to_dup, dup) == to_dup;
+		CHECK_INCLUDE(result_is_prefix, strstr(to_dup, dup) == to_dup);
 		free(dup);
 	}
 	free(to_dup);
-	test_check(res, "Result length is always correct",
-		   correct_result_length);
-	test_check(res, "Result is always a prefix of input",
-		   correct_result_length);
+
+	ASSERT_CHECK(correct_result_length);
+	ASSERT_CHECK(result_is_prefix);
 }
 
 
-TEST_DEFINE(test_get_path_subtree, res)
+DEFINE_TEST(test_get_path_subtree)
 {
-	TEST_AUTONAME(res);
+	DESCRIBE_TEST("Unit test for get_path_subtree");
+
+	DEFINE_CHECK(mem_alloc, "Memory successfully allocated");
+	DEFINE_CHECK(subtree_path, "Subtree(s) created at correct path");
+	DEFINE_CHECK(idempotent, "Calling more than once has no effect");
 
 	char* path = rand_path();
 	StringTree* tree = string_tree_create();
-	test_check(res, "Memory allocated", path && tree);
+	CHECK_INCLUDE(mem_alloc, path != NULL && tree != NULL);
 
 	StringTree* subtree;
 	StringTree* expected_subtree;
@@ -176,47 +184,54 @@ TEST_DEFINE(test_get_path_subtree, res)
 		expected_subtree =
 		    string_tree_find_subtree(expected_subtree, *segment);
 	}
-	test_check(res, "Subtree created at correct path",
-		   expected_subtree == subtree);
+	CHECK_INCLUDE(subtree_path, expected_subtree == subtree);
 
-	subtree = get_path_subtree(tree, path);
-	expected_subtree = tree;
-	for (char** segment = path_segments; *segment != NULL; ++segment) {
-		expected_subtree =
-		    string_tree_find_subtree(expected_subtree, *segment);
+	for (int i = 0; i < 4; ++i) {
+		subtree = get_path_subtree(tree, path);
+		expected_subtree = tree;
+		for (char** segment = path_segments; *segment != NULL;
+		     ++segment) {
+			expected_subtree = string_tree_find_subtree(
+			    expected_subtree, *segment);
+		}
+		CHECK_INCLUDE(idempotent, expected_subtree == subtree);
 	}
-	test_check(res, "Same subtree exists at path after refetch",
-		   expected_subtree == subtree);
 
 	free(path);
 	free_path_segments(path_segments);
 	string_tree_destroy(tree);
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(subtree_path);
+	ASSERT_CHECK(idempotent);
 }
 
 
-TEST_DEFINE(test_path_argv_create, res)
+DEFINE_TEST(test_path_argv_create)
 {
-	TEST_AUTONAME(res);
+	DESCRIBE_TEST("Unit test for path_argv_create");
 
-	bool correct_allocation = true;
+	DEFINE_CHECK(correct_allocation,
+		     "Expected number of allocated pointers are NULL");
+
 #define USELESS_NAME_FOR_USELESS_CPPCG_WARNING 10
 	size_t test_size = USELESS_NAME_FOR_USELESS_CPPCG_WARNING;
 #undef USELESS_NAME_FOR_USELESS_CPPCG_WARNING
 	for (size_t size = 1; size < test_size; ++size) {
 		char** path = path_argv_create(size);
 		for (size_t i = 0; i < size; ++i) {
-			correct_allocation &= path[i] == NULL;
+			CHECK_INCLUDE(correct_allocation, path[i] == NULL);
 		}
 		free(path);
 	}
-	test_check(res, "Expected number of allocated pointers are NULL",
-		   correct_allocation);
+
+	ASSERT_CHECK(correct_allocation);
 }
 
 
-TEST_DEFINE(test_path_argv_destroy, res)
+DEFINE_TEST(test_path_argv_destroy)
 {
-	TEST_AUTONAME(res);
+	DESCRIBE_TEST("Unit test for path_argv_destroy");
 
 #define USELESS_NAME_FOR_USELESS_CPPCG_WARNING 10
 	size_t test_size = USELESS_NAME_FOR_USELESS_CPPCG_WARNING;
@@ -232,23 +247,24 @@ TEST_DEFINE(test_path_argv_destroy, res)
 }
 
 
-TEST_DEFINE(test_find_path_subtree, res)
+DEFINE_TEST(test_find_path_subtree)
 {
-	TEST_AUTONAME(res);
+	DESCRIBE_TEST("Unit test for find_path_subtree");
 
-	bool allocation_success = true;
-	bool wildcard_matched = true;
-	bool preferred_matches = true;
-	bool paths_truncated = true;
-	bool correct_argc = true;
-	bool correct_argv = true;
+	DEFINE_CHECK(allocation_success, "Allocations succeeded");
+	DEFINE_CHECK(wildcard_matched, "Wildcard segments matched");
+	DEFINE_CHECK(preferred_matches,
+		     "Exact matches take preference over wildcard matches");
+	DEFINE_CHECK(paths_truncated, "Paths greater than limit are truncated");
+	DEFINE_CHECK(correct_argc, "Correct path argument count is returned");
+	DEFINE_CHECK(correct_argv, "Correct path argument vector is returned");
 
 	{
 		const StringTree* subtree;
 		int argc = 0;
 		char** argv = NULL;
 		StringTree* tree = string_tree_create();
-		allocation_success &= tree != NULL;
+		CHECK_INCLUDE(allocation_success, tree != NULL);
 		const char* paths_to_add[] = {
 		    "/asdf/qwerty/zxcv", "/<?>/qwerty/zxcv", "/asdf/<?>/zxcv",
 		    "/asdf/qwerty/<?>"};
@@ -258,75 +274,65 @@ TEST_DEFINE(test_find_path_subtree, res)
 		for (size_t i = 0; i < n_paths; ++i) {
 			const char* path = paths_to_add[i];
 			subtrees[i] = get_path_subtree(tree, path);
-			allocation_success &= subtrees[i] != NULL;
+			CHECK_INCLUDE(allocation_success, subtrees[i] != NULL);
 		}
 		subtree =
 		    find_path_subtree(tree, paths_to_add[0], &argc, &argv);
-		wildcard_matched &= subtree != NULL;
-		preferred_matches &= subtree == subtrees[0];
+		CHECK_INCLUDE(wildcard_matched, subtree != NULL);
+		CHECK_INCLUDE(preferred_matches, subtree == subtrees[0]);
 		path_argv_destroy(argc, argv);
 		string_tree_destroy(tree);
 	}
 
 	// TODO(phymod0): Remaining checks
 
-	test_check(res, "Allocations succeeded", allocation_success);
-	test_check(res, "Wildcard segments matched", wildcard_matched);
-	test_check(res, "Exact matches take preference over wildcard matches",
-		   preferred_matches);
-	test_check(res, "Paths greater than limit are truncated",
-		   paths_truncated);
-	test_check(res, "Correct path argument count is returned",
-		   correct_argc);
-	test_check(res, "Correct path argument vector is returned",
-		   correct_argv);
+	ASSERT_CHECK(allocation_success);
+	ASSERT_CHECK(wildcard_matched);
+	ASSERT_CHECK(preferred_matches);
+	ASSERT_CHECK(paths_truncated);
+	ASSERT_CHECK(correct_argc);
+	ASSERT_CHECK(correct_argv);
 }
 
 
-TEST_DEFINE(test_register_single_handler, res)
+DEFINE_TEST(test_register_single_handler)
 {
-	TEST_AUTONAME(res);
-	test_check(res, "Write this test", true);
+	DESCRIBE_TEST("Unit test for register_single_handler");
 }
 
 
-TEST_DEFINE(test_handle_signal, res)
+DEFINE_TEST(test_handle_signal)
 {
-	TEST_AUTONAME(res);
-	test_check(res, "Write this test", true);
+	DESCRIBE_TEST("Unit test for handle_signal");
 }
 
 
-TEST_DEFINE(test_get_method_str, res)
+DEFINE_TEST(test_get_method_str)
 {
-	TEST_AUTONAME(res);
-	test_check(res, "Write this test", true);
+	DESCRIBE_TEST("Unit test for get_method_str");
 }
 
 
-TEST_DEFINE(test_get_request_path, res)
+DEFINE_TEST(test_get_request_path)
 {
-	TEST_AUTONAME(res);
-	test_check(res, "Write this test", true);
+	DESCRIBE_TEST("Unit test for get_request_path");
 }
 
 
-TEST_DEFINE(test_validate_path, res)
+DEFINE_TEST(test_validate_path)
 {
-	TEST_AUTONAME(res);
-	test_check(res, "Write this test", true);
+	DESCRIBE_TEST("Unit test for test_validate_path");
 }
 
 
-TEST_DEFINE(test_event_base_create_and_init, res)
+DEFINE_TEST(test_event_base_create_and_init)
 {
-	TEST_AUTONAME(res);
-	test_check(res, "Write this test", true);
+	DESCRIBE_TEST("Unit test for event_base_create_and_init");
 }
 
 
-TEST_START(test_str_ndup, test_get_path_subtree, test_path_argv_create,
-	   test_path_argv_destroy, test_find_path_subtree,
-	   test_register_single_handler, test_handle_signal,
-	   test_get_method_str, test_get_request_path, test_validate_path,
-	   test_event_base_create_and_init)
+START(test_str_ndup, test_get_path_subtree, test_path_argv_create,
+      test_path_argv_destroy, test_find_path_subtree,
+      test_register_single_handler, test_handle_signal, test_get_method_str,
+      test_get_request_path, test_validate_path,
+      test_event_base_create_and_init)
