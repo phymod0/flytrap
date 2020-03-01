@@ -5,6 +5,7 @@
 #include "../src/adt/trie/trie.c"
 #include "../src/adt/trie/trie.h"
 
+#define WITHOUT_CTEST_NAMESPACE
 #include "ctest.h"
 
 #include <stdio.h>
@@ -37,57 +38,75 @@ static char* gen_rand_str(size_t len)
 }
 
 
-TEST_DEFINE(test_instantiation, res)
+DEFINE_TEST(test_instantiation)
 {
-	test_name(res, "string tree creation");
+	DESCRIBE_TEST("Unit test for string_tree_create");
+
+	DEFINE_CHECK(mem_alloc, "Memory allocations successful");
+	DEFINE_CHECK(val_init, "Value is initialized to NULL");
+	DEFINE_CHECK(no_subtrees, "No initial subtrees");
 
 	StringTree* string_tree = string_tree_create();
-	test_check(res, "Memory allocated", string_tree != NULL);
-	test_check(res, "Value is initialized to NULL",
-		   string_tree->val == NULL);
+	CHECK_INCLUDE(mem_alloc, string_tree != NULL);
+	CHECK_INCLUDE(val_init, string_tree->val == NULL);
 
 	int n_subtrees = string_tree->subtrees->root->n_children;
-	test_check(res, "No initial subtrees", n_subtrees == 0);
+	CHECK_INCLUDE(no_subtrees, n_subtrees == 0);
 
 	string_tree_destroy(string_tree);
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(val_init);
+	ASSERT_CHECK(no_subtrees);
 }
 
 
-TEST_DEFINE(test_create_subtree, res)
+DEFINE_TEST(test_create_subtree)
 {
-	test_name(res, "subtree creation");
+	DESCRIBE_TEST("Unit test for create_subtree");
+
+	DEFINE_CHECK(mem_alloc, "Memory allocations successful");
+	DEFINE_CHECK(subtrees_exist_in_parent,
+		     "Inserted subtrees exist in parent tree");
 
 	StringTree* parent = string_tree_create();
-	test_check(res, "Parent tree created", parent != NULL);
+	CHECK_INCLUDE(mem_alloc, parent != NULL);
 
 	StringTree* subtree1 = create_subtree(parent, "hell");
+	CHECK_INCLUDE(mem_alloc, subtree1 != NULL);
+	CHECK_INCLUDE(subtrees_exist_in_parent,
+		      trie_find(parent->subtrees, "hell") == subtree1);
+
 	StringTree* subtree2 = create_subtree(parent, "hello");
+	CHECK_INCLUDE(mem_alloc, subtree2 != NULL);
+	CHECK_INCLUDE(subtrees_exist_in_parent,
+		      trie_find(parent->subtrees, "hello") == subtree2);
+
 	StringTree* subtree3 = create_subtree(parent, "hellboy");
+	CHECK_INCLUDE(mem_alloc, subtree3 != NULL);
+	CHECK_INCLUDE(subtrees_exist_in_parent,
+		      trie_find(parent->subtrees, "hellboy") == subtree3);
+
 	StringTree* subtree4 = create_subtree(parent, "helpme");
+	CHECK_INCLUDE(mem_alloc, subtree4 != NULL);
+	CHECK_INCLUDE(subtrees_exist_in_parent,
+		      trie_find(parent->subtrees, "helpme") == subtree4);
+
 	StringTree* subtree5 = create_subtree(parent, "different");
-
-	test_check(res, "Subtrees created",
-		   subtree1 != NULL && subtree2 != NULL && subtree3 != NULL &&
-		       subtree4 != NULL && subtree5 != NULL);
-
-	test_check(res, "First subtree exists in parent",
-		   trie_find(parent->subtrees, "hell") == subtree1);
-	test_check(res, "Second subtree exists in parent",
-		   trie_find(parent->subtrees, "hello") == subtree2);
-	test_check(res, "Third subtree exists in parent",
-		   trie_find(parent->subtrees, "hellboy") == subtree3);
-	test_check(res, "Fourth subtree exists in parent",
-		   trie_find(parent->subtrees, "helpme") == subtree4);
-	test_check(res, "Fifth subtree exists in parent",
-		   trie_find(parent->subtrees, "different") == subtree5);
+	CHECK_INCLUDE(mem_alloc, subtree5 != NULL);
+	CHECK_INCLUDE(subtrees_exist_in_parent,
+		      trie_find(parent->subtrees, "different") == subtree5);
 
 	string_tree_destroy(parent);
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(subtrees_exist_in_parent);
 }
 
 
-TEST_DEFINE(asan_test_destroy, res)
+DEFINE_TEST(asan_test_destroy)
 {
-	test_name(res, "subtree destruction");
+	DESCRIBE_TEST("Unit test for string_tree_destroy");
 
 	const char* words[] = {"hell", "hello", "hellboy", "helpme",
 			       "different"};
@@ -105,9 +124,12 @@ TEST_DEFINE(asan_test_destroy, res)
 }
 
 
-TEST_DEFINE(test_find_subtree, res)
+DEFINE_TEST(test_find_subtree)
 {
-	test_name(res, "subtree retrieval");
+	DESCRIBE_TEST("Unit test for string_tree_find_subtree");
+
+	DEFINE_CHECK(mem_alloc, "Memory allocations successful");
+	DEFINE_CHECK(found_matches_created, "Expected subtrees are found");
 
 #define n_words 16
 #define min_word_len 100
@@ -115,14 +137,14 @@ TEST_DEFINE(test_find_subtree, res)
 	StringTree* string_tree;
 	char* words[n_words];
 	StringTree* subtrees[n_words];
-	bool found_matches_created = true;
 
 	string_tree = string_tree_create();
-	test_check(res, "String tree created", string_tree != NULL);
+	CHECK_INCLUDE(mem_alloc, string_tree != NULL);
 
 	for (int i = 0; i < n_words; ++i) {
 		int j;
 		words[i] = gen_rand_str(gen_len_bw(min_word_len, max_word_len));
+		CHECK_INCLUDE(mem_alloc, words[i] != NULL);
 		for (j = 0; j < i; ++j) {
 			if (strcmp(words[j], words[i]) == 0) {
 				break;
@@ -135,13 +157,14 @@ TEST_DEFINE(test_find_subtree, res)
 
 	for (int i = 0; i < n_words; ++i) {
 		subtrees[i] = create_subtree(string_tree, words[i]);
+		CHECK_INCLUDE(mem_alloc, subtrees[i] != NULL);
 		for (int j = 0; j <= i; ++j) {
 			StringTree* found;
 			found = string_tree_find_subtree(string_tree, words[j]);
-			found_matches_created &= found == subtrees[j];
+			CHECK_INCLUDE(found_matches_created,
+				      found == subtrees[j]);
 		}
 	}
-	test_check(res, "Found tree matches created", found_matches_created);
 
 	for (int i = 0; i < n_words; ++i) {
 		free(words[i]);
@@ -151,12 +174,20 @@ TEST_DEFINE(test_find_subtree, res)
 #undef max_word_len
 #undef min_word_len
 #undef n_words
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(found_matches_created);
 }
 
 
-TEST_DEFINE(test_get_subtree, res)
+DEFINE_TEST(test_get_subtree)
 {
-	test_name(res, "subtree retrieval with creation");
+	DESCRIBE_TEST("Unit test for string_tree_get_subtree");
+
+	DEFINE_CHECK(mem_alloc, "Memory allocations successful");
+	DEFINE_CHECK(not_found_before_getting, "Not found before getting");
+	DEFINE_CHECK(created_through_get, "Subtree created through get");
+	DEFINE_CHECK(found_matches_created, "Found subtree matches created");
 
 #define n_words 16
 #define min_word_len 100
@@ -164,16 +195,14 @@ TEST_DEFINE(test_get_subtree, res)
 	StringTree* string_tree;
 	char* words[n_words];
 	StringTree* subtrees[n_words];
-	bool not_found_before_getting = true;
-	bool created_through_get = true;
-	bool found_matches_created = true;
 
 	string_tree = string_tree_create();
-	test_check(res, "String tree created", string_tree != NULL);
+	CHECK_INCLUDE(mem_alloc, string_tree != NULL);
 
 	for (int i = 0; i < n_words; ++i) {
 		int j;
 		words[i] = gen_rand_str(gen_len_bw(min_word_len, max_word_len));
+		CHECK_INCLUDE(mem_alloc, words[i] != NULL);
 		for (j = 0; j < i; ++j) {
 			if (strcmp(words[j], words[i]) == 0) {
 				break;
@@ -187,19 +216,18 @@ TEST_DEFINE(test_get_subtree, res)
 	for (int i = 0; i < n_words; ++i) {
 		StringTree* subtree;
 		subtree = string_tree_find_subtree(string_tree, words[i]);
-		not_found_before_getting &= subtree == NULL;
+		CHECK_INCLUDE(not_found_before_getting, subtree == NULL);
 		subtree = string_tree_get_subtree(string_tree, words[i]);
-		created_through_get &= subtree != NULL;
+		CHECK_INCLUDE(mem_alloc, subtree != NULL);
+		CHECK_INCLUDE(created_through_get, subtree != NULL);
 		subtrees[i] = subtree;
 		for (int j = 0; j <= i; ++j) {
 			StringTree* found;
 			found = string_tree_get_subtree(string_tree, words[j]);
-			found_matches_created &= found == subtrees[j];
+			CHECK_INCLUDE(found_matches_created,
+				      found == subtrees[j]);
 		}
 	}
-	test_check(res, "Not found before getting", not_found_before_getting);
-	test_check(res, "Subtree created through get", created_through_get);
-	test_check(res, "Found tree matches created", found_matches_created);
 
 	for (int i = 0; i < n_words; ++i) {
 		free(words[i]);
@@ -209,46 +237,63 @@ TEST_DEFINE(test_get_subtree, res)
 #undef max_word_len
 #undef min_word_len
 #undef n_words
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(not_found_before_getting);
+	ASSERT_CHECK(created_through_get);
+	ASSERT_CHECK(found_matches_created);
 }
 
 
-TEST_DEFINE(test_get_value, res)
+DEFINE_TEST(test_get_value)
 {
-	test_name(res, "value getting");
+	DESCRIBE_TEST("Unit test for string_tree_get_value");
+
+	DEFINE_CHECK(mem_alloc, "Memory allocations successful");
+	DEFINE_CHECK(correct_retrieved, "The correct value was retrieved");
 
 	StringTree* string_tree;
 	const char* value;
 	const char* retrieved;
 
 	string_tree = string_tree_create();
-	test_check(res, "String tree created", string_tree != NULL);
+	CHECK_INCLUDE(mem_alloc, string_tree != NULL);
 
 	value = "Arbitrary string";
 	string_tree->val = (void*)value;
 	retrieved = string_tree_get_value(string_tree);
-	test_check(res, "Value retrieved correctly", retrieved == value);
+	CHECK_INCLUDE(correct_retrieved, retrieved == value);
 
 	string_tree_destroy(string_tree);
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(correct_retrieved);
 }
 
 
-TEST_DEFINE(test_set_value, res)
+DEFINE_TEST(test_set_value)
 {
-	test_name(res, "value setting");
+	DESCRIBE_TEST("Unit test for string_tree_set_value");
+
+	DEFINE_CHECK(mem_alloc, "Memory allocations successful");
+	DEFINE_CHECK(correct_set, "The correct value was set");
 
 	StringTree* string_tree;
 	const char* value;
 
 	string_tree = string_tree_create();
-	test_check(res, "String tree created", string_tree != NULL);
+	CHECK_INCLUDE(mem_alloc, string_tree != NULL);
 
 	value = "Arbitrary string";
 	string_tree_set_value(string_tree, (void*)value);
-	test_check(res, "Value set correctly", string_tree->val == value);
+	CHECK_INCLUDE(correct_set, string_tree->val == value);
 
 	string_tree_destroy(string_tree);
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(correct_set);
 }
 
 
-TEST_START(test_instantiation, test_create_subtree, asan_test_destroy,
-	   test_find_subtree, test_get_subtree, test_get_value, test_set_value)
+START(test_instantiation, test_create_subtree, asan_test_destroy,
+      test_find_subtree, test_get_subtree, test_get_value, test_set_value)
