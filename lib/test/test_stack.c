@@ -1,28 +1,55 @@
 #include "../src/adt/trie/stack.c"
 
+#define WITHOUT_CTEST_NAMESPACE
 #include "ctest.h"
 
+#include <stdio.h>
 
-TEST_DEFINE(test_stack_create, res)
+
+static size_t get_rand_uint()
 {
-	TEST_AUTONAME(res);
-
-	Stack* s = stack_create(STACK_OPS_FREE);
-
-	test_check(res, "Stack initially empty", stack_empty(s));
-	test_check(res, "Pop and top initially return NULL",
-		   !stack_pop(s) && !stack_pop(s) && !stack_pop(s) &&
-		       !stack_top(s) && !stack_top(s));
-
-	stack_destroy(s);
+	size_t random;
+	FILE* fd = fopen("/dev/urandom", "rbe");
+	fread(&random, sizeof random, 1, fd);
+	fclose(fd);
+	return random;
 }
 
 
-TEST_DEFINE(test_stack_pushpop, res)
+DEFINE_TEST(test_stack_create)
 {
-	TEST_AUTONAME(res);
+	DESCRIBE_TEST("Test for empty stack at creation");
+
+	DEFINE_CHECK(mem_alloc, "Memory allocations successful");
+	DEFINE_CHECK(initially_empty, "Stack initially empty");
+	DEFINE_CHECK(pop_top_null, "Pop and top initially return NULL");
 
 	Stack* s = stack_create(STACK_OPS_FREE);
+	CHECK_INCLUDE(mem_alloc, s != NULL);
+
+	CHECK_INCLUDE(initially_empty, stack_empty(s));
+	CHECK_INCLUDE(pop_top_null, !stack_pop(s) && !stack_pop(s) &&
+					!stack_pop(s) && !stack_top(s) &&
+					!stack_top(s));
+
+	stack_destroy(s);
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(initially_empty);
+	ASSERT_CHECK(pop_top_null);
+}
+
+
+DEFINE_TEST(test_stack_pushpop)
+{
+	DESCRIBE_TEST("Test for stack pushing/popping");
+
+	DEFINE_CHECK(mem_alloc, "Memory allocations successful");
+	DEFINE_CHECK(pop_in_reverse, "Stack popped in reverse push order");
+	DEFINE_CHECK(empty_on_remove, "Stack empty after full removal");
+
+	Stack* s = stack_create(STACK_OPS_FREE);
+	CHECK_INCLUDE(mem_alloc, s != NULL);
 	const char* message = "racecar Hello world! wasitacatisaw";
 	const char* reverse = "wasitacatisaw !dlrow olleH racecar";
 
@@ -41,18 +68,27 @@ TEST_DEFINE(test_stack_pushpop, res)
 		}
 		free(c);
 	}
-	test_check(res, "Stack popped in reverse push order", match);
-	test_check(res, "Stack empty after full removal", stack_empty(s));
+	CHECK_INCLUDE(pop_in_reverse, match);
+	CHECK_INCLUDE(empty_on_remove, stack_empty(s));
 
 	stack_destroy(s);
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(pop_in_reverse);
+	ASSERT_CHECK(empty_on_remove);
 }
 
 
-TEST_DEFINE(test_stack_top, res)
+DEFINE_TEST(test_stack_top)
 {
-	TEST_AUTONAME(res);
+	DESCRIBE_TEST("Test for stack peeking");
+
+	DEFINE_CHECK(mem_alloc, "Memory allocations successful");
+	DEFINE_CHECK(correct_on_push, "Top correct while pushing");
+	DEFINE_CHECK(correct_on_pop, "Top correct while popping");
 
 	Stack* s = stack_create(STACK_OPS_FREE);
+	CHECK_INCLUDE(mem_alloc, s != NULL);
 	const char* message = "Hello world!";
 
 	bool match = true;
@@ -60,18 +96,19 @@ TEST_DEFINE(test_stack_top, res)
 		char* dup = malloc(1);
 		*dup = *message;
 		stack_push(s, dup);
-		if (!stack_top(s) || *(char*)stack_top(s) != *message)
+		if (!stack_top(s) || *(char*)stack_top(s) != *message) {
 			match = false;
+		}
 	}
-	test_check(res, "Top correct while pushing", match);
+	CHECK_INCLUDE(correct_on_push, match);
 
 	match = true;
 	message = "!dlrow olleH";
 	for (; *message; ++message) {
-		char* c = stack_top(s);
-		c = stack_top(s);
-		c = stack_top(s);
-		c = stack_top(s);
+		char* c;
+		for (int i = 0; i < 4; ++i) {
+			c = stack_top(s);
+		}
 		if (!c || *c != *message) {
 			match = false;
 			free(c);
@@ -80,20 +117,26 @@ TEST_DEFINE(test_stack_top, res)
 		free(c);
 		stack_pop(s);
 	}
-	test_check(res, "Top correct while popping", match);
+	CHECK_INCLUDE(correct_on_pop, match);
 
 	stack_destroy(s);
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(correct_on_push);
+	ASSERT_CHECK(correct_on_pop);
 }
 
 
-TEST_DEFINE(vg_test_stack_destroy, res)
+DEFINE_TEST(asan_test_stack_destroy)
 {
-	TEST_AUTONAME(res);
+	DESCRIBE_TEST("Test for stack destruction");
 
 	Stack* s = stack_create(STACK_OPS_FREE);
 
-	size_t n_push = (rand() % 1000) + 1000;
-	while (n_push-- > 0) {
+#define THOUSAND 1000
+	size_t n_push = (get_rand_uint() % THOUSAND) + THOUSAND;
+#undef THOUSAND
+	for (size_t i = 0; i < n_push; ++i) { // NOLINT
 		int* r = malloc(sizeof(int));
 		stack_push(s, r);
 	}
@@ -102,5 +145,5 @@ TEST_DEFINE(vg_test_stack_destroy, res)
 }
 
 
-TEST_START(test_stack_create, test_stack_pushpop, test_stack_top,
-	   vg_test_stack_destroy, )
+START(test_stack_create, test_stack_pushpop, test_stack_top,
+      asan_test_stack_destroy)
