@@ -1,10 +1,11 @@
 !_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
 !_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
 !_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
 !_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
 !_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
 !_TAG_PROGRAM_URL	https://ctags.io/	/official site/
-!_TAG_PROGRAM_VERSION	0.0.0	/3fdf28bc/
+!_TAG_PROGRAM_VERSION	0.0.0	/a3c87ab5/
 ALLOC	adt/trie/stack.c	/^#define ALLOC(/;"	d	file:
 ALLOC	adt/trie/trie.c	/^#define ALLOC(/;"	d	file:
 DEFAULT_DOCROOT	config.h	/^#define DEFAULT_DOCROOT /;"	d
@@ -181,7 +182,7 @@ stack_top	adt/trie/stack.c	/^void* stack_top(Stack* s) { return s->head ? s->hea
 str_dup	adt/trie/trie.c	/^static char* str_dup(const char* str)$/;"	f	typeref:typename:char *	file:
 str_n_dup	adt/trie/trie.c	/^static char* str_n_dup(const char* str, size_t n)$/;"	f	typeref:typename:char *	file:
 str_n_dup	rest/main.c	/^static char* str_n_dup(const char* str, size_t n)$/;"	f	typeref:typename:char *	file:
-str_n_dup	rest/rest.c	/^static char* str_n_dup(const char* str, size_t n)$/;"	f	typeref:typename:char *	file:
+str_ndup	rest/rest.c	/^static char* str_ndup(const char* str, size_t n)$/;"	f	typeref:typename:char *	file:
 string_tree_create	adt/string_tree/string_tree.c	/^StringTree* string_tree_create()$/;"	f	typeref:typename:StringTree *
 string_tree_destroy	adt/string_tree/string_tree.c	/^void string_tree_destroy(StringTree* tree)$/;"	f	typeref:typename:void
 string_tree_find_subtree	adt/string_tree/string_tree.c	/^StringTree* string_tree_find_subtree(const StringTree* tree, const char* node)$/;"	f	typeref:typename:StringTree *
