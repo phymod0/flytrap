@@ -11,7 +11,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: arch-latest
 
     steps:
     - uses: actions/checkout@v1
@@ -22,9 +22,11 @@ jobs:
 
   test:
 
-    runs-on: ubuntu-latest
+    runs-on: arch-latest
 
     steps:
     - uses: actions/checkout@v1
+    - name: Install dependencies
+      run: sudo apt-get install libevent-dev
     - name: Test lib/
       run: mkdir build && cd build/ && cmake .. && make test
