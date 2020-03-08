@@ -22,8 +22,8 @@ struct RestCtx {
 
 static char* str_ndup(const char* str, size_t n);
 static StringTree* get_path_subtree(StringTree* tree, const char* path);
-static char** path_argv_create(int size);
-static void path_argv_destroy(int argc, char** argv);
+static char** path_argv_create();
+static void path_argv_destroy(char** argv);
 static StringTree* find_path_subtree(StringTree* tree, const char* path,
 				     int* path_argc, char*** path_argv);
 static int register_single_handler(const HTTPHandler* handler, RestCtx* ctx);
@@ -183,18 +183,18 @@ err:
 }
 
 
-static char** path_argv_create(int size)
+static char** path_argv_create()
 {
-	return calloc(size > 0 ? size : 1, sizeof(char*));
+	return calloc(REST_PATH_MAX_WILDCARDS, sizeof(char*));
 }
 
 
-static void path_argv_destroy(int argc, char** argv)
+static void path_argv_destroy(char** argv)
 {
 	if (!argv) {
 		return;
 	}
-	for (int i = 0; i < argc; ++i) {
+	for (int i = 0; i < REST_PATH_MAX_WILDCARDS && argv[i] != NULL; ++i) {
 		free(argv[i]);
 	}
 	free(argv);
@@ -212,7 +212,7 @@ static StringTree* find_path_subtree(StringTree* tree, const char* path,
 	if (!(dup_path = str_ndup(path, REST_PATH_MAXSZ))) {
 		goto oom;
 	}
-	if (!(argv = path_argv_create(REST_PATH_MAX_WILDCARDS))) {
+	if (!(argv = path_argv_create())) {
 		goto oom;
 	}
 
@@ -246,7 +246,7 @@ static StringTree* find_path_subtree(StringTree* tree, const char* path,
 
 oom:
 	LOGGER_ERROR("Out of memory");
-	path_argv_destroy(REST_PATH_MAX_WILDCARDS, argv);
+	path_argv_destroy(argv);
 	free(dup_path);
 	return NULL;
 }
@@ -443,7 +443,7 @@ static void generic_handler_cb(struct evhttp_request* req, void* data)
 	LOGGER_INFO("%s %s succeeded with return value 0", method_str, path);
 
 done:
-	path_argv_destroy(argc, argv);
+	path_argv_destroy(argv);
 	free(path);
 }
 
