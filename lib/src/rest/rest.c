@@ -13,6 +13,7 @@
 
 struct RestCtx {
 	struct event_base* base;
+	struct event* term;
 	struct evhttp* http;
 	StringTree* handlers;
 	HTTPFileRequestHandler file_request_handler;
@@ -41,11 +42,12 @@ RestCtx* rest_ctx_create()
 {
 	RestCtx* ctx = NULL;
 	struct event_base* base = NULL;
+	struct event* term = NULL;
 	struct evhttp* http = NULL;
 	StringTree* handlers = NULL;
 
 	ctx = malloc(sizeof *ctx);
-	base = event_base_create_and_init();
+	base = event_base_create_and_init(&term);
 	http = evhttp_new(base);
 	handlers = string_tree_create();
 	if (!ctx || !base || !http || !handlers) {
@@ -53,6 +55,7 @@ RestCtx* rest_ctx_create()
 	}
 
 	ctx->base = base;
+	ctx->term = term;
 	evhttp_set_gencb(http, generic_handler_cb, ctx);
 	ctx->http = http;
 	ctx->handlers = handlers;
@@ -65,6 +68,9 @@ err:
 	string_tree_destroy(handlers);
 	if (http) {
 		evhttp_free(http);
+	}
+	if (term) {
+		event_free(term);
 	}
 	if (base) {
 		event_base_free(base);
@@ -79,6 +85,9 @@ void rest_ctx_destroy(RestCtx* ctx)
 	string_tree_destroy(ctx->handlers);
 	if (ctx->http) {
 		evhttp_free(ctx->http);
+	}
+	if (ctx->term) {
+		event_free(ctx->term);
 	}
 	if (ctx->base) {
 		event_base_free(ctx->base);
@@ -448,7 +457,7 @@ done:
 }
 
 
-static struct event_base* event_base_create_and_init()
+static struct event_base* event_base_create_and_init(struct event** sigterm)
 {
 	struct event_base* base = NULL;
 	struct event* term = NULL;
@@ -459,6 +468,7 @@ static struct event_base* event_base_create_and_init()
 		goto err;
 	}
 
+	*sigterm = term;
 	return base;
 
 err:

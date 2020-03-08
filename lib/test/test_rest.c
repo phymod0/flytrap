@@ -524,6 +524,52 @@ DEFINE_TEST(test_find_path_subtree)
 DEFINE_TEST(test_register_single_handler)
 {
 	DESCRIBE_TEST("Unit test for register_single_handler");
+
+	DEFINE_CHECK(mem_alloc, "Memory allocations successful");
+	DEFINE_CHECK(path_correct, "Handlers are set at the correct path");
+	DEFINE_CHECK(replaced, "Handlers are inserted with replacement");
+
+	RestCtx* ctx = rest_ctx_create();
+	StringTree* tree;
+	HTTPHandler handler = {
+	    .path = "/a/b/c/d",
+	    .methods =
+		{
+		    .GET = (HTTPMethod)0x1122334455667788,    // NOLINT
+		    .POST = (HTTPMethod)0x1133557722446688,   // NOLINT
+		    .DELETE = (HTTPMethod)0x8877665544332211, // NOLINT
+		    .PUT = (HTTPMethod)0x2244668811335577,    // NOLINT
+		},
+	};
+	int argc;
+	char** argv;
+
+	CHECK_INCLUDE(mem_alloc, ctx != NULL);
+	CHECK_INCLUDE(mem_alloc, register_single_handler(&handler, ctx) != -1);
+	tree = find_path_subtree(ctx->handlers, handler.path, &argc, &argv);
+	path_argv_destroy(argv);
+	CHECK_INCLUDE(path_correct, tree != NULL);
+	CHECK_INCLUDE(path_correct,
+		      (HTTPMethods*)(tree->val) == &(handler.methods));
+
+	handler.methods = (HTTPMethods){
+	    .GET = (HTTPMethod)0x8877665544332211,    // NOLINT
+	    .POST = (HTTPMethod)0x2244668811335577,   // NOLINT
+	    .DELETE = (HTTPMethod)0x1122334455667788, // NOLINT
+	    .PUT = (HTTPMethod)0x1133557722446688,    // NOLINT
+	};
+	CHECK_INCLUDE(mem_alloc, register_single_handler(&handler, ctx) != -1);
+	tree = find_path_subtree(ctx->handlers, handler.path, &argc, &argv);
+	path_argv_destroy(argv);
+	CHECK_INCLUDE(path_correct, tree != NULL);
+	CHECK_INCLUDE(replaced,
+		      (HTTPMethods*)(tree->val) == &(handler.methods));
+
+	rest_ctx_destroy(ctx);
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(path_correct);
+	ASSERT_CHECK(replaced);
 }
 
 
@@ -557,7 +603,7 @@ DEFINE_TEST(test_event_base_create_and_init)
 }
 
 
-// TODO(phymod0): Remaining tests
+// TODO(phymod0): Test interfaces
 
 
 START(test_str_ndup, test_get_path_subtree, test_path_argv_create,
