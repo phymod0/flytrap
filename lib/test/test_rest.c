@@ -3,6 +3,7 @@
 #include "../src/adt/string_tree/string_tree.c"
 #include "../src/adt/trie/stack.c"
 #include "../src/adt/trie/trie.c"
+#include "../src/config.h"
 #include "../src/rest/rest.c"
 
 #define WITHOUT_CTEST_NAMESPACE
@@ -83,6 +84,25 @@ static char* rand_path()
 }
 
 
+static char* rand_path_with_len(size_t len)
+{
+	size_t pos;
+	const int jump_len = 10;
+	char* path = gen_rand_str(len);
+	if (!path) {
+		return NULL;
+	}
+	if (rand_bool()) {
+		path[0] = '/';
+	}
+	for (pos = gen_len_bw(1, jump_len); pos < len;
+	     pos += gen_len_bw(1, jump_len)) {
+		path[pos] = '/';
+	}
+	return path;
+}
+
+
 static char* strdup(const char* str)
 {
 	size_t len = strlen(str);
@@ -129,6 +149,21 @@ static void free_path_segments(char** segments)
 		free(*segment);
 	}
 	free(segments);
+}
+
+
+static bool verify_path_in_tree(StringTree* tree, const char* path)
+{
+	char** segments = get_path_segments(path);
+	for (char** segment = segments; *segment; ++segment) {
+		if (!tree) {
+			free_path_segments(segments);
+			return false;
+		}
+		tree = string_tree_find_subtree(tree, *segment);
+	}
+	free_path_segments(segments);
+	return tree != NULL;
 }
 
 
@@ -218,7 +253,7 @@ DEFINE_TEST(test_path_argv_create)
 	size_t test_size = USELESS_NAME_FOR_USELESS_CPPCG_WARNING;
 #undef USELESS_NAME_FOR_USELESS_CPPCG_WARNING
 	for (size_t size = 1; size < test_size; ++size) {
-		char** path = path_argv_create(size);
+		char** path = path_argv_create();
 		for (size_t i = 0; i < size; ++i) {
 			CHECK_INCLUDE(correct_allocation, path[i] == NULL);
 		}
@@ -236,12 +271,12 @@ DEFINE_TEST(test_path_argv_destroy)
 #define USELESS_NAME_FOR_USELESS_CPPCG_WARNING 10
 	size_t test_size = USELESS_NAME_FOR_USELESS_CPPCG_WARNING;
 	for (size_t size = 1; size < test_size; ++size) {
-		char** path = path_argv_create(size);
+		char** path = path_argv_create();
 		for (size_t i = 0; i < size; ++i) {
 			path[i] = malloc(gen_len_bw(
 			    1, USELESS_NAME_FOR_USELESS_CPPCG_WARNING));
 		}
-		path_argv_destroy(size, path);
+		path_argv_destroy(path);
 	}
 #undef USELESS_NAME_FOR_USELESS_CPPCG_WARNING
 }
@@ -255,32 +290,64 @@ DEFINE_TEST(test_find_path_subtree)
 	DEFINE_CHECK(wildcard_matched, "Wildcard segments matched");
 	DEFINE_CHECK(preferred_matches,
 		     "Exact matches take preference over wildcard matches");
-	DEFINE_CHECK(paths_truncated, "Paths greater than limit are truncated");
+	DEFINE_CHECK(paths_truncated,
+		     "Only paths greater than the limit are truncated");
 	DEFINE_CHECK(correct_argc, "Correct path argument count is returned");
 	DEFINE_CHECK(correct_argv, "Correct path argument vector is returned");
 
-	{
+	{ // Test wildcard matching
 		const StringTree* subtree;
 		int argc = 0;
 		char** argv = NULL;
 		StringTree* tree = string_tree_create();
-		CHECK_INCLUDE(allocation_success, tree != NULL);
 		const char* paths_to_add[] = {
-		    "/asdf/qwerty/zxcv", "/<?>/qwerty/zxcv", "/asdf/<?>/zxcv",
-		    "/asdf/qwerty/<?>"};
+		    "/asdf/qwerty/zxcv",
+		    "/" REST_PATH_SEGMENT_WILDCARD "/qwerty/zxcv",
+		    "/asdf/" REST_PATH_SEGMENT_WILDCARD "/zxcv",
+		    "/asdf/qwerty/" REST_PATH_SEGMENT_WILDCARD};
 		const size_t n_paths =
 		    (sizeof paths_to_add / sizeof paths_to_add[0]) - 1;
 		const StringTree* subtrees[n_paths];
+
+		CHECK_INCLUDE(allocation_success, tree != NULL);
+
 		for (size_t i = 0; i < n_paths; ++i) {
 			const char* path = paths_to_add[i];
 			subtrees[i] = get_path_subtree(tree, path);
 			CHECK_INCLUDE(allocation_success, subtrees[i] != NULL);
 		}
+
 		subtree =
 		    find_path_subtree(tree, paths_to_add[0], &argc, &argv);
+		path_argv_destroy(argv);
+
 		CHECK_INCLUDE(wildcard_matched, subtree != NULL);
 		CHECK_INCLUDE(preferred_matches, subtree == subtrees[0]);
-		path_argv_destroy(argc, argv);
+
+		string_tree_destroy(tree);
+	}
+
+	{ // Test path truncation
+		StringTree* tree = string_tree_create();
+		char* good_path;
+		char* bad_path;
+
+		CHECK_INCLUDE(allocation_success, tree != NULL);
+
+		good_path = rand_path_with_len(REST_PATH_MAXSZ);
+		CHECK_INCLUDE(allocation_success,
+			      get_path_subtree(tree, good_path) != NULL);
+		CHECK_INCLUDE(paths_truncated,
+			      verify_path_in_tree(tree, good_path));
+		free(good_path);
+
+		bad_path = rand_path_with_len(REST_PATH_MAXSZ * 2);
+		CHECK_INCLUDE(allocation_success,
+			      get_path_subtree(tree, bad_path) != NULL);
+		CHECK_INCLUDE(paths_truncated,
+			      !verify_path_in_tree(tree, bad_path));
+		free(bad_path);
+
 		string_tree_destroy(tree);
 	}
 
