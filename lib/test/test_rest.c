@@ -152,7 +152,7 @@ static void free_path_segments(char** segments)
 }
 
 
-static bool verify_path_in_tree(StringTree* tree, const char* path)
+static bool is_path_in_tree(StringTree* tree, const char* path)
 {
 	char** segments = get_path_segments(path);
 	for (char** segment = segments; *segment; ++segment) {
@@ -338,20 +338,179 @@ DEFINE_TEST(test_find_path_subtree)
 		CHECK_INCLUDE(allocation_success,
 			      get_path_subtree(tree, good_path) != NULL);
 		CHECK_INCLUDE(paths_truncated,
-			      verify_path_in_tree(tree, good_path));
+			      is_path_in_tree(tree, good_path));
 		free(good_path);
 
 		bad_path = rand_path_with_len(REST_PATH_MAXSZ * 2);
 		CHECK_INCLUDE(allocation_success,
 			      get_path_subtree(tree, bad_path) != NULL);
 		CHECK_INCLUDE(paths_truncated,
-			      !verify_path_in_tree(tree, bad_path));
+			      !is_path_in_tree(tree, bad_path));
 		free(bad_path);
 
 		string_tree_destroy(tree);
 	}
 
-	// TODO(phymod0): Remaining checks
+	{ // Test wildcard substitution
+		typedef struct {
+			const char* path;
+			int expected_argc;
+			char* expected_argv[REST_PATH_MAX_WILDCARDS];
+		} TestData;
+		typedef struct {
+			const char* base_path;
+			TestData test_data[16]; // NOLINT
+		} TData;
+
+		TData t_data[4] = {
+		    {
+			// Path with 0 segments
+			"/",
+			{
+			    {
+				"/",
+				0,
+				{NULL},
+			    },
+			},
+		    },
+
+		    {
+			// Path with 1 segment
+			"/a",
+			{
+			    {
+				"/a",
+				0,
+				{NULL},
+			    },
+			    {
+				"/" REST_PATH_SEGMENT_WILDCARD,
+				1,
+				{"a"},
+			    },
+			},
+		    },
+
+		    {
+			// Path with 2 segments
+			"/a/b",
+			{
+			    {
+				"/a/b",
+				0,
+				{NULL},
+			    },
+			    {
+				"/a/" REST_PATH_SEGMENT_WILDCARD,
+				1,
+				{"b"},
+			    },
+			    {
+				"/" REST_PATH_SEGMENT_WILDCARD "/b",
+				1,
+				{"a"},
+			    },
+			    {
+				"/" REST_PATH_SEGMENT_WILDCARD
+				"/" REST_PATH_SEGMENT_WILDCARD,
+				2,
+				{"a", "b"},
+			    },
+			},
+		    },
+
+		    {
+			// Path with 3 segments
+			"/a/b/c",
+			{
+			    {
+				"/a/b/c",
+				0,
+				{NULL},
+			    },
+			    {
+				"/a/b/" REST_PATH_SEGMENT_WILDCARD,
+				1,
+				{"c"},
+			    },
+			    {
+				"/a/" REST_PATH_SEGMENT_WILDCARD "/c",
+				1,
+				{"b"},
+			    },
+			    {
+				"/" REST_PATH_SEGMENT_WILDCARD "/b/c",
+				1,
+				{"a"},
+			    },
+			    {
+				"/a/" REST_PATH_SEGMENT_WILDCARD
+				"/" REST_PATH_SEGMENT_WILDCARD,
+				2,
+				{"b", "c"},
+			    },
+			    {
+				"/" REST_PATH_SEGMENT_WILDCARD
+				"/b/" REST_PATH_SEGMENT_WILDCARD,
+				2,
+				{"a", "c"},
+			    },
+			    {
+				"/" REST_PATH_SEGMENT_WILDCARD
+				"/" REST_PATH_SEGMENT_WILDCARD "/c",
+				2,
+				{"a", "b"},
+			    },
+			    {
+				"/" REST_PATH_SEGMENT_WILDCARD
+				"/" REST_PATH_SEGMENT_WILDCARD
+				"/" REST_PATH_SEGMENT_WILDCARD,
+				3,
+				{"a", "b", "c"},
+			    },
+			},
+		    },
+		};
+
+		const int t_data_sz = sizeof t_data / sizeof t_data[0];
+		for (int i = 0; i < t_data_sz; ++i) {
+			const char* base_path = t_data[i].base_path;
+			TestData* test_data = t_data[i].test_data;
+
+			for (int j = 0; j < (1 << i); ++j) {
+				StringTree* tree;
+				StringTree* subtree;
+				TestData data = test_data[j];
+				int expected_argc = data.expected_argc;
+				char** expected_argv = data.expected_argv;
+				int argc;
+				char** argv;
+
+				tree = string_tree_create();
+				CHECK_INCLUDE(allocation_success, tree != NULL);
+				subtree = get_path_subtree(tree, data.path);
+				CHECK_INCLUDE(allocation_success,
+					      subtree != NULL);
+				subtree = find_path_subtree(tree, base_path,
+							    &argc, &argv);
+				CHECK_INCLUDE(wildcard_matched,
+					      subtree != NULL);
+				CHECK_INCLUDE(correct_argc,
+					      argc == expected_argc); // NOLINT
+				for (int k = 0; k < argc; ++k) {
+					char* actual = argv[k];
+					char* expected = expected_argv[k];
+					CHECK_INCLUDE(
+					    correct_argv,
+					    strcmp(actual, expected) == 0);
+				}
+
+				path_argv_destroy(argv);
+				string_tree_destroy(tree);
+			}
+		}
+	}
 
 	ASSERT_CHECK(allocation_success);
 	ASSERT_CHECK(wildcard_matched);
