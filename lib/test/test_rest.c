@@ -1,4 +1,24 @@
+#define MOCK_TESTING
 #define LOGGING_ENABLE 0
+
+
+#ifdef MOCK_TESTING
+
+#include <event2/event.h>
+
+struct {
+	struct event_base* event_base;
+} mock_data;
+
+static int __mock_event_base_loopbreak(struct event_base* base)
+{
+	mock_data.event_base = base;
+	return 0;
+}
+#define event_base_loopbreak __mock_event_base_loopbreak
+
+#endif /* MOCK_TESTING */
+
 
 #include "../src/adt/string_tree/string_tree.c"
 #include "../src/adt/trie/stack.c"
@@ -576,6 +596,18 @@ DEFINE_TEST(test_register_single_handler)
 DEFINE_TEST(test_handle_signal)
 {
 	DESCRIBE_TEST("Unit test for handle_signal");
+#ifdef MOCK_TESTING
+
+	DEFINE_CHECK(correct_arg, "Correct arg passed to event_base_loopbreak");
+
+#define RANDOM_ADDRESS 0x1122334455667788
+	handle_signal(0, 0, (void*)RANDOM_ADDRESS);
+	CHECK_INCLUDE(correct_arg, mock_data.event_base ==
+				       (struct event_base*)RANDOM_ADDRESS);
+#undef RANDOM_ADDRESS
+
+	ASSERT_CHECK(correct_arg);
+#endif /* MOCK_TESTING */
 }
 
 
