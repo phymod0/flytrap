@@ -864,7 +864,28 @@ DEFINE_TEST(test_document_request_cb)
 }
 
 
-// TODO(phymod0): Unit test for generic_handler_cb
+DEFINE_TEST(test_generic_handler_cb)
+{
+	DESCRIBE_TEST("Unit test for generic_handler_cb");
+
+#ifdef MOCK_TESTING
+	DEFINE_CHECK(correct_errors, "Correct http error codes sent");
+	DEFINE_CHECK(doc_cb, "document_request_cb called for document paths");
+	DEFINE_CHECK(no_handlers, "Safe to have no registered handlers");
+	DEFINE_CHECK(no_methods, "Safe to have no registered methods");
+	DEFINE_CHECK(null_method, "Safe for the requested method to be null");
+	DEFINE_CHECK(method_called, "Correct method called when available");
+
+	// TODO(phymod0): Test
+
+	ASSERT_CHECK(correct_errors);
+	ASSERT_CHECK(doc_cb);
+	ASSERT_CHECK(no_handlers);
+	ASSERT_CHECK(no_methods);
+	ASSERT_CHECK(null_method);
+	ASSERT_CHECK(method_called);
+#endif /* MOCK_TESTING */
+}
 
 
 DEFINE_TEST(test_event_base_create_and_init)
@@ -916,4 +937,4 @@ START(test_str_ndup, test_get_path_subtree, test_path_argv_create,
       test_path_argv_destroy, test_find_path_subtree,
       test_register_single_handler, test_handle_signal, test_get_method_str,
       test_get_request_path, test_validate_path, test_document_request_cb,
-      test_event_base_create_and_init)
+      test_generic_handler_cb, test_event_base_create_and_init)
