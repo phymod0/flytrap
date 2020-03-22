@@ -5,9 +5,16 @@
 #ifdef MOCK_TESTING
 
 #include <event2/event.h>
+#include <event2/event_struct.h>
+#include <event2/http.h>
+#include <event2/http_struct.h>
+#include <time.h>
 
 struct {
 	struct event_base* event_base;
+	struct event* event;
+	int last_error;
+	int function_called;
 } mock_data;
 
 static int __mock_event_base_loopbreak(struct event_base* base)
@@ -16,6 +23,25 @@ static int __mock_event_base_loopbreak(struct event_base* base)
 	return 0;
 }
 #define event_base_loopbreak __mock_event_base_loopbreak
+
+static int __mock_event_add(struct event* ev, struct timeval* tv)
+{
+	(void)tv;
+	mock_data.event_base = ev->ev_base;
+	mock_data.event = ev;
+	return 0;
+}
+#define event_add __mock_event_add
+
+static int __mock_evhttp_send_error(struct evhttp_request* req, int reason_code,
+				    const char* reason_str)
+{
+	(void)req;
+	(void)reason_str;
+	mock_data.last_error = reason_code;
+	return 0;
+}
+#define evhttp_send_error __mock_evhttp_send_error
 
 #endif /* MOCK_TESTING */
 
@@ -184,6 +210,20 @@ static bool is_path_in_tree(StringTree* tree, const char* path)
 	}
 	free_path_segments(segments);
 	return tree != NULL;
+}
+
+
+static int file_request_mock_handler(void* server_ctx,
+				     struct evhttp_request* req,
+				     const char* path)
+{
+	(void)server_ctx;
+	(void)req;
+	mock_data.function_called = true;
+	if (strcmp(path, "Intentionally throw 500") == 0) {
+		return -1;
+	}
+	return 0;
 }
 
 
@@ -614,24 +654,258 @@ DEFINE_TEST(test_handle_signal)
 DEFINE_TEST(test_get_method_str)
 {
 	DESCRIBE_TEST("Unit test for get_method_str");
+
+	DEFINE_CHECK(correct_strs, "Correct strings are returned");
+
+#define STREQ(str1, str2) (strcmp(str1, str2) == 0)
+#define VERIFY_FOR_METHOD(method)                                              \
+	CHECK_INCLUDE(correct_strs,                                            \
+		      STREQ(get_method_str(EVHTTP_REQ_##method), #method))
+
+	VERIFY_FOR_METHOD(GET);
+	VERIFY_FOR_METHOD(POST);
+	VERIFY_FOR_METHOD(HEAD);
+	VERIFY_FOR_METHOD(PUT);
+	VERIFY_FOR_METHOD(DELETE);
+	VERIFY_FOR_METHOD(OPTIONS);
+	VERIFY_FOR_METHOD(TRACE);
+	VERIFY_FOR_METHOD(CONNECT);
+	VERIFY_FOR_METHOD(PATCH);
+	CHECK_INCLUDE(correct_strs, STREQ(get_method_str(9), "unknown"));
+
+#undef VERIFY_FOR_METHOD
+#undef STREQ
+
+	ASSERT_CHECK(correct_strs);
 }
 
 
 DEFINE_TEST(test_get_request_path)
 {
 	DESCRIBE_TEST("Unit test for get_request_path");
+
+#ifdef MOCK_TESTING
+	DEFINE_CHECK(mem_alloc, "Memory allocations successful");
+	DEFINE_CHECK(correct_parsed, "URIs are parsed correctly");
+
+#define VERIFY(_uri, path)                                                     \
+	{                                                                      \
+		struct evhttp_request req;                                     \
+		req.uri = _uri;                                                \
+		char* result = get_request_path(&req);                         \
+		CHECK_INCLUDE(mem_alloc, result != NULL);                      \
+		CHECK_INCLUDE(correct_parsed, strcmp(path, result) == 0);      \
+		free(result);                                                  \
+	}
+
+#define scheme "http://"
+#define domain "asdf.io"
+#define port "1234"
+#define params "?abc=1&def=2"
+#define fragment "#fragment"
+#define VERIFY_FOR_PATH(path)                                                  \
+	{                                                                      \
+		VERIFY(scheme domain path, path);                              \
+		VERIFY(scheme domain port path, path);                         \
+		VERIFY(scheme domain path params, path);                       \
+		VERIFY(scheme domain port path params, path);                  \
+		VERIFY(scheme domain path fragment, path);                     \
+		VERIFY(scheme domain port path fragment, path);                \
+		VERIFY(scheme domain path params fragment, path);              \
+		VERIFY(scheme domain port path params fragment, path);         \
+	}
+
+	VERIFY_FOR_PATH("/");
+	VERIFY_FOR_PATH("/abc/");
+	VERIFY_FOR_PATH("/abc/def/ghi");
+	VERIFY_FOR_PATH("/abc//def/ghi///");
+
+#undef VERIFY_FOR_PATH
+#undef fragment
+#undef params
+#undef port
+#undef domain
+#undef scheme
+
+#undef VERIFY
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(correct_parsed);
+#endif /* MOCK_TESTING */
 }
 
 
 DEFINE_TEST(test_validate_path)
 {
-	DESCRIBE_TEST("Unit test for test_validate_path");
+	DESCRIBE_TEST("Unit test for validate_path");
+
+	DEFINE_CHECK(validation_sound, "Validation is sound");
+	DEFINE_CHECK(validation_complete, "Validation is complete");
+
+	/* TODO(phymod0): Find a better way */
+#define EXPECT_INVALID(path)                                                   \
+	CHECK_INCLUDE(validation_sound, validate_path(path) == -1)
+#define EXPECT_VALID(path)                                                     \
+	CHECK_INCLUDE(validation_complete, validate_path(path) == 0)
+
+	EXPECT_INVALID("..");
+	EXPECT_INVALID("../");
+	EXPECT_INVALID("../../");
+	EXPECT_INVALID("../protected_folder");
+	EXPECT_INVALID("../protected_folder/");
+	EXPECT_INVALID(".//../protected_folder");
+	EXPECT_INVALID("./public_folder/../../protected_folder");
+
+	EXPECT_VALID(".");
+	EXPECT_VALID("./");
+	EXPECT_VALID("public_folder");
+	EXPECT_VALID("public_folder/");
+	EXPECT_VALID("./public_folder");
+	EXPECT_VALID("./public_folder/");
+	EXPECT_VALID("./public_folder/./");
+
+#undef EXPECT_VALID
+#undef EXPECT_INVALID
+
+	ASSERT_CHECK(validation_sound);
+	ASSERT_CHECK(validation_complete);
 }
+
+
+DEFINE_TEST(test_document_request_cb)
+{
+	DESCRIBE_TEST("Unit test for document_request_cb");
+
+#ifdef MOCK_TESTING
+	DEFINE_CHECK(correct_errors, "Correct http error codes sent");
+	DEFINE_CHECK(handler_sound, "Handler calling sound");
+	DEFINE_CHECK(handler_complete, "Handler calling complete");
+
+	{ // Test for 405 response on non-existent (NULL) handler
+		struct evhttp_request req;
+		const char* path = NULL;
+		RestCtx ctx = {
+		    .file_request_handler = NULL,
+		};
+
+		mock_data.last_error = HTTP_OK;
+		mock_data.function_called = false;
+		document_request_cb(&req, path, &ctx);
+		CHECK_INCLUDE(correct_errors,
+			      mock_data.last_error == HTTP_BADMETHOD);
+		CHECK_INCLUDE(handler_sound,
+			      mock_data.function_called == false);
+	}
+
+	{ // Test for 405 response on invalid path
+		struct evhttp_request req;
+		RestCtx ctx = {
+		    .file_request_handler = file_request_mock_handler,
+		};
+
+		mock_data.last_error = HTTP_OK;
+		mock_data.function_called = false;
+#define TEST_ON_BAD_PATH(path)                                                 \
+	{                                                                      \
+		document_request_cb(&req, path, &ctx);                         \
+		CHECK_INCLUDE(correct_errors,                                  \
+			      mock_data.last_error == HTTP_BADREQUEST);        \
+		CHECK_INCLUDE(handler_sound,                                   \
+			      mock_data.function_called == false);             \
+		mock_data.last_error = HTTP_OK;                                \
+	}
+
+		TEST_ON_BAD_PATH("..");
+		TEST_ON_BAD_PATH("../");
+		TEST_ON_BAD_PATH("../../");
+		TEST_ON_BAD_PATH("../protected_folder");
+		TEST_ON_BAD_PATH("../protected_folder/");
+		TEST_ON_BAD_PATH(".//../protected_folder");
+		TEST_ON_BAD_PATH("./public_folder/../../protected_folder");
+
+#undef TEST_ON_BAD_PATH
+	}
+
+	{ // Test for 500 response on the handler throwing -1
+		struct evhttp_request req;
+		const char* path = "Intentionally throw 500";
+		RestCtx ctx = {
+		    .file_request_handler = file_request_mock_handler,
+		};
+
+		mock_data.last_error = HTTP_OK;
+		mock_data.function_called = false;
+		document_request_cb(&req, path, &ctx);
+		CHECK_INCLUDE(correct_errors,
+			      mock_data.last_error == HTTP_INTERNAL);
+		CHECK_INCLUDE(handler_complete,
+			      mock_data.function_called == true);
+	}
+
+	{ // Test for no error on a valid request with the handler returning 0
+		struct evhttp_request req;
+		const char* path = "./path/to/document.html";
+		RestCtx ctx = {
+		    .file_request_handler = file_request_mock_handler,
+		};
+
+		mock_data.last_error = HTTP_OK;
+		mock_data.function_called = false;
+		document_request_cb(&req, path, &ctx);
+		CHECK_INCLUDE(correct_errors, mock_data.last_error == HTTP_OK);
+		CHECK_INCLUDE(handler_complete,
+			      mock_data.function_called == true);
+	}
+
+	ASSERT_CHECK(correct_errors);
+	ASSERT_CHECK(handler_sound);
+	ASSERT_CHECK(handler_complete);
+#endif /* MOCK_TESTING */
+}
+
+
+// TODO(phymod0): Unit test for generic_handler_cb
 
 
 DEFINE_TEST(test_event_base_create_and_init)
 {
 	DESCRIBE_TEST("Unit test for event_base_create_and_init");
+
+	DEFINE_CHECK(mem_alloc, "Allocations successful");
+	DEFINE_CHECK(correct_return, "Correct sigint event is returned");
+	DEFINE_CHECK(correct_sigterm, "Correct sigint values are set");
+#ifdef MOCK_TESTING
+	DEFINE_CHECK(added, "event_add called");
+#endif /* MOCK_TESTING */
+
+	struct event* sigterm = NULL;
+	struct event_base* base = event_base_create_and_init(&sigterm);
+
+	struct event_base* actual_base = NULL;
+	event_callback_fn callback;
+	void* cb_data;
+	event_get_assignment(sigterm, &actual_base, NULL, NULL, &callback,
+			     &cb_data);
+
+	CHECK_INCLUDE(mem_alloc, base != NULL);
+	CHECK_INCLUDE(mem_alloc, sigterm != NULL);
+	CHECK_INCLUDE(correct_return, callback == handle_signal);
+	CHECK_INCLUDE(correct_sigterm, actual_base == base);
+	CHECK_INCLUDE(correct_sigterm, (struct event_base*)cb_data == base);
+#ifdef MOCK_TESTING
+	CHECK_INCLUDE(added, mock_data.event_base == base);
+	CHECK_INCLUDE(added, mock_data.event == sigterm);
+#endif /* MOCK_TESTING */
+
+	event_free(sigterm);
+	event_base_free(base);
+
+	ASSERT_CHECK(mem_alloc);
+	ASSERT_CHECK(correct_return);
+	ASSERT_CHECK(correct_sigterm);
+#ifdef MOCK_TESTING
+	ASSERT_CHECK(added);
+#endif /* MOCK_TESTING */
 }
 
 
@@ -641,5 +915,5 @@ DEFINE_TEST(test_event_base_create_and_init)
 START(test_str_ndup, test_get_path_subtree, test_path_argv_create,
       test_path_argv_destroy, test_find_path_subtree,
       test_register_single_handler, test_handle_signal, test_get_method_str,
-      test_get_request_path, test_validate_path,
+      test_get_request_path, test_validate_path, test_document_request_cb,
       test_event_base_create_and_init)
