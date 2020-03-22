@@ -365,8 +365,8 @@ static void document_request_cb(struct evhttp_request* req, const char* path,
 {
 	HTTPFileRequestHandler handler = ctx->file_request_handler;
 	if (!handler) {
-		LOGGER_INFO("No document found at path %s", path);
-		evhttp_send_error(req, HTTP_NOTFOUND, "Not found");
+		LOGGER_INFO("Rejecting file request (not implemented)");
+		evhttp_send_error(req, HTTP_BADMETHOD, "Not supported");
 	} else if (validate_path(path) < 0) {
 		LOGGER_INFO("Rejected path %s", path);
 		evhttp_send_error(req, HTTP_BADREQUEST, "Bad request");
