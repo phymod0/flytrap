@@ -15,6 +15,10 @@ struct {
 	struct event* event;
 	int last_error;
 	int function_called;
+	int last_path_argc;
+	char** last_path_argv;
+	int last_http_method;
+	int http_method_called;
 } mock_data;
 
 static int __mock_event_base_loopbreak(struct event_base* base)
@@ -221,6 +225,56 @@ static int file_request_mock_handler(void* server_ctx,
 	(void)req;
 	mock_data.function_called = true;
 	if (strcmp(path, "Intentionally throw 500") == 0) {
+		return -1;
+	}
+	return 0;
+}
+
+
+static char** path_argv_copy(int path_argc, char** path_argv)
+{
+	char** result = malloc(path_argc * sizeof *result);
+	for (int i = 0; i < path_argc; ++i) {
+		result[i] = strdup(path_argv[i]);
+	}
+	return result;
+}
+
+
+static bool path_argv_compare(int argc1, char** argv1, int argc2, char** argv2)
+{
+	if (argc1 != argc2) {
+		return false;
+	}
+	for (int i = 0; i < argc1; ++i) {
+		if (strcmp(argv1[i], argv2[i]) != 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+static void path_argv_free(int argc, char** argv)
+{
+	for (int i = 0; i < argc; ++i) {
+		free(argv[i]);
+	}
+	free(argv);
+}
+
+
+static int http_mock_method(void* server_ctx, struct evhttp_request* req,
+			    int path_argc, char** path_argv)
+{
+	(void)server_ctx;
+	(void)req;
+	mock_data.last_path_argc = path_argc;
+	mock_data.last_path_argv = path_argv_copy(path_argc, path_argv);
+	mock_data.last_http_method = req->type;
+	mock_data.http_method_called = true;
+	if (path_argc == 1 &&
+	    strcmp(path_argv[0], "intentionally_throw_500") == 0) {
 		return -1;
 	}
 	return 0;
@@ -561,6 +615,13 @@ DEFINE_TEST(test_find_path_subtree)
 				for (int k = 0; k < argc; ++k) {
 					char* actual = argv[k];
 					char* expected = expected_argv[k];
+					CHECK_INCLUDE(allocation_success,
+						      actual != NULL &&
+							  expected != NULL);
+					if (actual == NULL ||
+					    expected == NULL) {
+						continue;
+					}
 					CHECK_INCLUDE(
 					    correct_argv,
 					    strcmp(actual, expected) == 0);
@@ -797,7 +858,7 @@ DEFINE_TEST(test_document_request_cb)
 			      mock_data.function_called == false);
 	}
 
-	{ // Test for 405 response on invalid path
+	{ // Test for 400 response on invalid path
 		struct evhttp_request req;
 		RestCtx ctx = {
 		    .file_request_handler = file_request_mock_handler,
@@ -864,26 +925,322 @@ DEFINE_TEST(test_document_request_cb)
 }
 
 
-DEFINE_TEST(test_generic_handler_cb)
+DEFINE_TEST(test_generic_handler_cb) // NOLINT
 {
 	DESCRIBE_TEST("Unit test for generic_handler_cb");
 
 #ifdef MOCK_TESTING
 	DEFINE_CHECK(correct_errors, "Correct http error codes sent");
-	DEFINE_CHECK(doc_cb, "document_request_cb called for document paths");
+	DEFINE_CHECK(document_request_cb_called_sound,
+		     "document_request_cb not called when not required");
+	DEFINE_CHECK(document_request_cb_called_complete,
+		     "document_request_cb called when required");
 	DEFINE_CHECK(no_handlers, "Safe to have no registered handlers");
 	DEFINE_CHECK(no_methods, "Safe to have no registered methods");
 	DEFINE_CHECK(null_method, "Safe for the requested method to be null");
+	DEFINE_CHECK(unsupported_method,
+		     "Safe for the requested method to not be supported");
 	DEFINE_CHECK(method_called, "Correct method called when available");
+	DEFINE_CHECK(correct_args, "Correct arguments passed to HTTP methods");
 
-	// TODO(phymod0): Test
+#define MOCK_ADDR "127.0.0.1"
+#define MOCK_PORT 1234
+#define GOOD_URI "http://asdf.io:1234/abc/def/ghi?abc=123&xyz=789"
+#define BAD_URI "H&*4pujsdOJ..df.fasd./[asd[g;l[pdf[gdfsa"
+
+	{ // Test for 400 on invalid path
+		struct event_base* base = event_base_new();
+		struct evhttp_connection* conn = evhttp_connection_base_new(
+		    base, NULL, MOCK_ADDR, MOCK_PORT);
+		struct evhttp_request req = {.evcon = conn, .uri = BAD_URI};
+		RestCtx ctx = {
+		    .file_request_handler = file_request_mock_handler,
+		};
+		mock_data.last_error = HTTP_OK;
+		mock_data.function_called = false;
+		generic_handler_cb(&req, &ctx);
+		CHECK_INCLUDE(correct_errors,
+			      mock_data.last_error == HTTP_BADREQUEST);
+		CHECK_INCLUDE(document_request_cb_called_sound,
+			      !mock_data.function_called);
+		evhttp_connection_free(conn);
+		event_base_free(base);
+	}
+
+	{ // Test for document handling on missing path handlers/methods
+		struct event_base* base = event_base_new();
+		struct evhttp_connection* conn = evhttp_connection_base_new(
+		    base, NULL, MOCK_ADDR, MOCK_PORT);
+		struct evhttp_request req = {.evcon = conn, .uri = GOOD_URI};
+		StringTree* handlers = string_tree_create();
+		StringTree* handlers_subtree = handlers;
+		RestCtx ctx;
+
+		// When the path isn't registered
+		ctx.handlers = NULL;
+		ctx.file_request_handler = file_request_mock_handler;
+		mock_data.last_error = HTTP_OK;
+		mock_data.function_called = false;
+		generic_handler_cb(&req, &ctx);
+		CHECK_INCLUDE(correct_errors, mock_data.last_error == HTTP_OK);
+		CHECK_INCLUDE(document_request_cb_called_complete,
+			      mock_data.function_called);
+		CHECK_INCLUDE(no_handlers, true);
+
+		// Otherwise when the path doesn't have registered methods
+		handlers_subtree =
+		    string_tree_get_subtree(handlers_subtree, "abc");
+		handlers_subtree =
+		    string_tree_get_subtree(handlers_subtree, "def");
+		handlers_subtree =
+		    string_tree_get_subtree(handlers_subtree, "ghi");
+		ctx.handlers = handlers_subtree;
+		mock_data.last_error = HTTP_OK;
+		mock_data.function_called = false;
+		generic_handler_cb(&req, &ctx);
+		CHECK_INCLUDE(correct_errors, mock_data.last_error == HTTP_OK);
+		CHECK_INCLUDE(document_request_cb_called_complete,
+			      mock_data.function_called);
+		CHECK_INCLUDE(no_methods, true);
+
+		string_tree_destroy(handlers);
+		evhttp_connection_free(conn);
+		event_base_free(base);
+	}
+
+	{ // Test for HTTP 405 on method not set
+		struct event_base* base = event_base_new();
+		struct evhttp_connection* conn = evhttp_connection_base_new(
+		    base, NULL, MOCK_ADDR, MOCK_PORT);
+		struct evhttp_request req = {
+		    .evcon = conn, .uri = GOOD_URI, .type = EVHTTP_REQ_GET};
+
+		StringTree* handlers = string_tree_create();
+		StringTree* handlers_subtree = handlers;
+		HTTPMethods methods = {
+		    .GET = NULL,
+		    .PUT = NULL,
+		    .POST = NULL,
+		    .DELETE = NULL,
+		};
+		handlers_subtree =
+		    string_tree_get_subtree(handlers_subtree, "abc");
+		handlers_subtree =
+		    string_tree_get_subtree(handlers_subtree, "def");
+		handlers_subtree =
+		    string_tree_get_subtree(handlers_subtree, "ghi");
+		string_tree_set_value(handlers_subtree, &methods);
+		RestCtx ctx = {
+		    .file_request_handler = file_request_mock_handler,
+		    .handlers = handlers,
+		};
+
+		mock_data.last_error = HTTP_OK;
+		mock_data.function_called = false;
+		generic_handler_cb(&req, &ctx);
+		CHECK_INCLUDE(correct_errors,
+			      mock_data.last_error == HTTP_BADMETHOD);
+		CHECK_INCLUDE(document_request_cb_called_sound,
+			      !mock_data.function_called);
+		CHECK_INCLUDE(null_method, true);
+
+		string_tree_destroy(handlers);
+		evhttp_connection_free(conn);
+		event_base_free(base);
+	}
+
+	{ // Test for HTTP 405 on unsupported method
+		struct event_base* base = event_base_new();
+		struct evhttp_connection* conn = evhttp_connection_base_new(
+		    base, NULL, MOCK_ADDR, MOCK_PORT);
+#define VERIFY_FOR(method)                                                     \
+	{                                                                      \
+		struct evhttp_request req = {                                  \
+		    .evcon = conn, .uri = GOOD_URI, .type = (method)};         \
+                                                                               \
+		StringTree* handlers = string_tree_create();                   \
+		StringTree* handlers_subtree = handlers;                       \
+		handlers_subtree =                                             \
+		    string_tree_get_subtree(handlers_subtree, "abc");          \
+		handlers_subtree =                                             \
+		    string_tree_get_subtree(handlers_subtree, "def");          \
+		handlers_subtree =                                             \
+		    string_tree_get_subtree(handlers_subtree, "ghi");          \
+		string_tree_set_value(handlers_subtree, &(HTTPMethods){        \
+							    .GET = NULL,       \
+							    .PUT = NULL,       \
+							    .POST = NULL,      \
+							    .DELETE = NULL,    \
+							});                    \
+		RestCtx ctx = {                                                \
+		    .file_request_handler = file_request_mock_handler,         \
+		    .handlers = handlers,                                      \
+		};                                                             \
+                                                                               \
+		mock_data.last_error = HTTP_OK;                                \
+		mock_data.function_called = false;                             \
+		generic_handler_cb(&req, &ctx);                                \
+		CHECK_INCLUDE(correct_errors,                                  \
+			      mock_data.last_error == HTTP_BADMETHOD);         \
+		CHECK_INCLUDE(document_request_cb_called_sound,                \
+			      !mock_data.function_called);                     \
+		CHECK_INCLUDE(unsupported_method, true);                       \
+                                                                               \
+		string_tree_destroy(handlers);                                 \
+	}
+
+		VERIFY_FOR(EVHTTP_REQ_HEAD);
+		VERIFY_FOR(EVHTTP_REQ_OPTIONS);
+		VERIFY_FOR(EVHTTP_REQ_TRACE);
+		VERIFY_FOR(EVHTTP_REQ_CONNECT);
+		VERIFY_FOR(EVHTTP_REQ_PATCH);
+		VERIFY_FOR(1 << 9);
+		VERIFY_FOR(1 << 10);
+
+		evhttp_connection_free(conn);
+		event_base_free(base);
+#undef VERIFY_FOR
+	}
+
+	{ // Test for invocation of well-defined methods
+		struct event_base* base = event_base_new();
+		struct evhttp_connection* conn = evhttp_connection_base_new(
+		    base, NULL, MOCK_ADDR, MOCK_PORT);
+#define VERIFY_FOR(registered_path, request_uri_path, expected_argc,           \
+		   expected_argv, http_method, expected_http_status)           \
+	{                                                                      \
+		struct evhttp_request req = {                                  \
+		    .evcon = conn,                                             \
+		    .uri = "http://asdf.io:1234" request_uri_path              \
+			   "?abc=123&xyz=789",                                 \
+		    .type = EVHTTP_REQ_##http_method,                          \
+		};                                                             \
+                                                                               \
+		HTTPMethods methods = {                                        \
+		    .http_method = http_mock_method,                           \
+		};                                                             \
+		StringTree* handlers = string_tree_create();                   \
+		StringTree* handlers_subtree = handlers;                       \
+		char* _path = strdup(registered_path);                         \
+		for (char* tok = strtok(_path, "/"); tok;                      \
+		     tok = strtok(NULL, "/")) {                                \
+			handlers_subtree =                                     \
+			    string_tree_get_subtree(handlers_subtree, tok);    \
+		}                                                              \
+		free(_path);                                                   \
+		string_tree_set_value(handlers_subtree, &methods);             \
+		RestCtx ctx = {                                                \
+		    .file_request_handler = file_request_mock_handler,         \
+		    .handlers = handlers,                                      \
+		};                                                             \
+                                                                               \
+		mock_data.last_error = HTTP_OK;                                \
+		mock_data.function_called = false;                             \
+		mock_data.http_method_called = false;                          \
+		mock_data.last_path_argc = -1;                                 \
+		mock_data.last_path_argv = NULL;                               \
+		mock_data.last_http_method = -1;                               \
+		generic_handler_cb(&req, &ctx);                                \
+		CHECK_INCLUDE(correct_errors,                                  \
+			      mock_data.last_error == (expected_http_status)); \
+		CHECK_INCLUDE(document_request_cb_called_sound,                \
+			      !mock_data.function_called);                     \
+		CHECK_INCLUDE(method_called, mock_data.http_method_called);    \
+		CHECK_INCLUDE(correct_args, mock_data.last_http_method ==      \
+						EVHTTP_REQ_##http_method);     \
+		CHECK_INCLUDE(correct_args,                                    \
+			      path_argv_compare(mock_data.last_path_argc,      \
+						mock_data.last_path_argv,      \
+						expected_argc,                 \
+						expected_argv));               \
+                                                                               \
+		path_argv_free(mock_data.last_path_argc,                       \
+			       mock_data.last_path_argv);                      \
+		string_tree_destroy(handlers);                                 \
+	}
+#define MAKE_ARGV(...) ((char**)((const char*[]){__VA_ARGS__}))
+#define VERIFY_FOR_METHOD(method)                                              \
+	{                                                                      \
+		VERIFY_FOR("/", "/", 0, MAKE_ARGV(NULL), method, HTTP_OK);     \
+		VERIFY_FOR("/abc", "/abc", 0, MAKE_ARGV(NULL), method,         \
+			   HTTP_OK);                                           \
+		VERIFY_FOR("/" REST_PATH_SEGMENT_WILDCARD, "/abc", 1,          \
+			   MAKE_ARGV("abc"), method, HTTP_OK);                 \
+		VERIFY_FOR("/intentionally_throw_500",                         \
+			   "/intentionally_throw_500", 0, MAKE_ARGV(NULL),     \
+			   method, HTTP_OK);                                   \
+		VERIFY_FOR("/" REST_PATH_SEGMENT_WILDCARD,                     \
+			   "/intentionally_throw_500", 1,                      \
+			   MAKE_ARGV("intentionally_throw_500"), method,       \
+			   HTTP_INTERNAL);                                     \
+                                                                               \
+		VERIFY_FOR("/abc/def", "/abc/def", 0, MAKE_ARGV(NULL), method, \
+			   HTTP_OK);                                           \
+		VERIFY_FOR("/abc/" REST_PATH_SEGMENT_WILDCARD, "/abc/def", 1,  \
+			   MAKE_ARGV("def"), method, HTTP_OK);                 \
+		VERIFY_FOR("/" REST_PATH_SEGMENT_WILDCARD "/def", "/abc/def",  \
+			   1, MAKE_ARGV("abc"), method, HTTP_OK);              \
+		VERIFY_FOR("/" REST_PATH_SEGMENT_WILDCARD                      \
+			   "/" REST_PATH_SEGMENT_WILDCARD,                     \
+			   "/abc/def", 2, MAKE_ARGV("abc", "def"), method,     \
+			   HTTP_OK);                                           \
+                                                                               \
+		VERIFY_FOR("/abc/def/ghi", "/abc/def/ghi", 0, MAKE_ARGV(NULL), \
+			   method, HTTP_OK);                                   \
+		VERIFY_FOR("/" REST_PATH_SEGMENT_WILDCARD "/def/ghi",          \
+			   "/abc/def/ghi", 1, MAKE_ARGV("abc"), method,        \
+			   HTTP_OK);                                           \
+		VERIFY_FOR("/abc/" REST_PATH_SEGMENT_WILDCARD "/ghi",          \
+			   "/abc/def/ghi", 1, MAKE_ARGV("def"), method,        \
+			   HTTP_OK);                                           \
+		VERIFY_FOR("/" REST_PATH_SEGMENT_WILDCARD                      \
+			   "/" REST_PATH_SEGMENT_WILDCARD "/ghi",              \
+			   "/abc/def/ghi", 2, MAKE_ARGV("abc", "def"), method, \
+			   HTTP_OK);                                           \
+		VERIFY_FOR("/abc/def/" REST_PATH_SEGMENT_WILDCARD,             \
+			   "/abc/def/ghi", 1, MAKE_ARGV("ghi"), method,        \
+			   HTTP_OK);                                           \
+		VERIFY_FOR("/" REST_PATH_SEGMENT_WILDCARD                      \
+			   "/def/" REST_PATH_SEGMENT_WILDCARD,                 \
+			   "/abc/def/ghi", 2, MAKE_ARGV("abc", "ghi"), method, \
+			   HTTP_OK);                                           \
+		VERIFY_FOR("/abc/" REST_PATH_SEGMENT_WILDCARD                  \
+			   "/" REST_PATH_SEGMENT_WILDCARD,                     \
+			   "/abc/def/ghi", 2, MAKE_ARGV("def", "ghi"), method, \
+			   HTTP_OK);                                           \
+		VERIFY_FOR("/" REST_PATH_SEGMENT_WILDCARD                      \
+			   "/" REST_PATH_SEGMENT_WILDCARD                      \
+			   "/" REST_PATH_SEGMENT_WILDCARD,                     \
+			   "/abc/def/ghi", 3, MAKE_ARGV("abc", "def", "ghi"),  \
+			   method, HTTP_OK);                                   \
+	}
+
+		VERIFY_FOR_METHOD(GET);
+		VERIFY_FOR_METHOD(PUT);
+		VERIFY_FOR_METHOD(POST);
+		VERIFY_FOR_METHOD(DELETE);
+
+#undef VERIFY_FOR_METHOD
+#undef MAKE_ARGV
+#undef VERIFY_FOR
+		evhttp_connection_free(conn);
+		event_base_free(base);
+	}
+
+#undef BAD_URI
+#undef GOOD_URI
+#undef MOCK_PORT
+#undef MOCK_ADDR
 
 	ASSERT_CHECK(correct_errors);
-	ASSERT_CHECK(doc_cb);
+	ASSERT_CHECK(document_request_cb_called_sound);
+	ASSERT_CHECK(document_request_cb_called_complete);
 	ASSERT_CHECK(no_handlers);
 	ASSERT_CHECK(no_methods);
 	ASSERT_CHECK(null_method);
+	ASSERT_CHECK(unsupported_method);
 	ASSERT_CHECK(method_called);
+	ASSERT_CHECK(correct_args);
 #endif /* MOCK_TESTING */
 }
 
