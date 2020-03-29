@@ -17,7 +17,7 @@ static int probe_handler(void* server_ctx, struct evhttp_request* req,
 
 	response_buffer = evbuffer_new();
 	ret = evhttp_add_header(evhttp_request_get_output_headers(req),
-				"location", "https://www.facebook.com/");
+				"location", "http://www.random-domain.com/");
 	if (ret == -1) {
 		goto err;
 	}
