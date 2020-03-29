@@ -4,7 +4,7 @@ add_library(flytrap
     STATIC
     src/rest/register_modules.c
     src/rest/modules/static_pages/handlers.c
-    # src/rest/modules/interaction/handlers.c
+    src/rest/modules/interaction/handlers.c
     src/rest/modules/captive_portal/handlers.c
     src/rest/rest.c
     src/adt/trie/stack.c
