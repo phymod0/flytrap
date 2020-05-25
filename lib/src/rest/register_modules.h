@@ -1,3 +1,9 @@
+/**
+ * @file register_modules.h
+ * @brief Method declarations for registering REST modules.
+ */
+
+
 #ifndef REST_REGISTER_MODULES
 #define REST_REGISTER_MODULES
 

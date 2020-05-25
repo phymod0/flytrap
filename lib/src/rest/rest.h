@@ -1,3 +1,9 @@
+/**
+ * @file rest.h
+ * @brief Interface for the REST/HTTP server.
+ */
+
+
 #ifndef REST_EVENT_BASE
 #define REST_EVENT_BASE
 
