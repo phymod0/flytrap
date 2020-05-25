@@ -1,3 +1,5 @@
+#error CSV-based logger not implemented
+
 #include <stdbool.h>
 #include <stddef.h>
 
