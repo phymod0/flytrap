@@ -80,8 +80,7 @@ ILogError ilog_load_from_file(const char* filename, ILogCtx** ctx);
  *
  * Frees the allocated memory and closes all files owned by `ctx`.
  *
- * @param ctx Context created by `ilog_create_file` or
- * `ilog_load_from_file`
+ * @param ctx Context created by `ilog_create_file` or `ilog_load_from_file`
  */
 void ilog_destroy(ILogCtx* ctx);
 
@@ -97,7 +96,7 @@ void ilog_destroy(ILogCtx* ctx);
  * @see ilog_cursor_step
  * @see ilog_cursor_destroy
  *
- * @param ctx ILOG logger context
+ * @param ctx Context created by `ilog_create_file` or `ilog_load_from_file`
  * @param start The log number to start at, or 0 to start at the most recent
  * log
  * @param filter Pointer to an ilog filter, or NULL to disable filtering
