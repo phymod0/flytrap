@@ -1,23 +1,52 @@
 #ifdef ILOG_SQL
 
 
+#include "../../../adt/trie/trie.h"
+#include "../../../utils/logger.h"
 #include "ilog.h"
 
+#include <sqlite3.h>
+
+
+typedef enum {
+	ILOG_FLT_BASIC,
+	ILOG_FLT_INVERSION,
+	ILOG_FLT_CONJUNCTION,
+	ILOG_FLT_DISJUNCTION,
+} ILogFilterType;
+
+typedef enum {
+	ILOG_RLT_NUMLESS,
+	ILOG_RLT_NUMGREATER,
+	ILOG_RLT_STRLESS,
+	ILOG_RLT_STRGREATER,
+	ILOG_RLT_EQUAL,
+} ILogRelationType;
 
 struct ILogCtx {
-	int stub;
+	char* error_msg;
+	sqlite3* db;
+	bool is_db_open;
+	char** fields;
+	size_t n_fields;
 };
 
 struct ILogFilter {
-	int stub;
+	ILogFilterType filter_type;
+	struct ILogFilter* children[2];
+	long long int int_value;
+	char* str_value;
+	ILogRelationType relation_type;
 };
 
 struct ILogCursor {
-	int stub;
+	sqlite3_stmt* cursor;
+	bool is_ended;
+	struct ILogCtx* ctx;
 };
 
 struct ILog {
-	int stub;
+	Trie* field_value_map;
 };
 
 
