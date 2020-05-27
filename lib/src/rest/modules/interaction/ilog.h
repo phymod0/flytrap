@@ -44,11 +44,15 @@ typedef struct ILog ILog;
 /**
  * Creates and loads an empty log at the path specified in `filename`.
  *
- * The context will be allocated and initialized and it's pointer will
- * be written to `ctx`. If `ILOG_ESUCCESS` is returned, `ctx` must be
- * freed with `ilog_destroy` once no longer needed. Otherwise `ctx` will
- * remain unchanged.
+ * The context will be allocated and initialized and it's pointer will be
+ * written to `ctx`. If `ILOG_ESUCCESS` is returned, `ctx` must be freed with
+ * `ilog_destroy` once no longer needed. Otherwise `ctx` will remain unchanged.
+ * If a valid database file already exists at path `filename` then calling this
+ * function will have the same effect of calling `ilog_load_from_file` and the
+ * `fields` and `n_fields` parameters will be ignored. If not ignored, the
+ * strings in `fields` will be copied rather than borrowed.
  * @see ilog_destroy
+ * @see ilog_load_from_file
  *
  * @param filename C-string containing the path for the new log file
  * @param fields Array of the desired field names
@@ -62,11 +66,11 @@ ILogError ilog_create_file(const char* filename, const char* fields[],
 /**
  * Loads the log from the file specified in `filename`.
  *
- * The context will be allocated and initialized and it's pointer will
- * be written to `ctx`. If `ILOG_ESUCCESS` is returned, `ctx` must be
- * freed with `ilog_destroy` once no longer needed. Otherwise `ctx` will
- * remain unchanged. `ILOG_EFILE` is returned if the log file at `filename` is
- * absent. `ILOG_EINV` is returned if the log file existed but failed to load.
+ * The context will be allocated and initialized and it's pointer will be
+ * written to `ctx`. If `ILOG_ESUCCESS` is returned, `ctx` must be freed with
+ * `ilog_destroy` once no longer needed. Otherwise `ctx` will remain unchanged.
+ * `ILOG_EFILE` is returned if the log file at `filename` is absent.
+ * `ILOG_EINV` is returned if the log file existed but failed to load.
  * @see ilog_destroy
  *
  * @param filename C-string containing the path to the log file
