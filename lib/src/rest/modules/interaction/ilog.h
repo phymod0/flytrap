@@ -23,7 +23,7 @@ enum ILogError {
 	ILOG_ENOMEM,   /**< Out of memory */
 	ILOG_ECUREND,  /**< Error due to cursor end */
 	ILOG_EFILE,    /**< File error */
-	ILOG_EINV,     /**< Invariant violation */
+	ILOG_EINV,     /**< Violated invariant */
 };
 
 struct ILogCtx;
@@ -46,7 +46,7 @@ typedef struct ILog ILog;
  *
  * The context will be allocated and initialized and it's pointer will be
  * written to `ctx`. If `ILOG_ESUCCESS` is returned, `ctx` must be freed with
- * `ilog_destroy` once no longer needed. Otherwise `ctx` will remain unchanged.
+ * `ilog_destroy` once no longer needed. Otherwise `*ctx` will be set to `NULL`.
  * If a valid database file already exists at path `filename` then calling this
  * function will have the same effect of calling `ilog_load_from_file` and the
  * `fields` and `n_fields` parameters will be ignored. If not ignored, the
@@ -55,10 +55,10 @@ typedef struct ILog ILog;
  * @see ilog_load_from_file
  *
  * @param filename C-string containing the path for the new log file
- * @param fields Array of the desired field names
- * @param n_fields Number of the desired field names
+ * @param fields Array containing desired field names
+ * @param n_fields Number of desired field names
  * @param ctx Destination address to write the new context pointer to
- * @return ILOG_ENOMEM, ILOG_EFILE or ILOG_ESUCCESS
+ * @return ILOG_ENOMEM, ILOG_EFILE, ILOG_EINV or ILOG_ESUCCESS
  */
 ILogError ilog_create_file(const char* filename, const char* fields[],
 			   size_t n_fields, ILogCtx** ctx);
@@ -68,7 +68,7 @@ ILogError ilog_create_file(const char* filename, const char* fields[],
  *
  * The context will be allocated and initialized and it's pointer will be
  * written to `ctx`. If `ILOG_ESUCCESS` is returned, `ctx` must be freed with
- * `ilog_destroy` once no longer needed. Otherwise `ctx` will remain unchanged.
+ * `ilog_destroy` once no longer needed. Otherwise `*ctx` will be set to `NULL`.
  * `ILOG_EFILE` is returned if the log file at `filename` is absent.
  * `ILOG_EINV` is returned if the log file existed but failed to load.
  * @see ilog_destroy
