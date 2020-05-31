@@ -83,8 +83,9 @@ ILogError ilog_load_from_file(const char* filename, ILogCtx** ctx);
  * Frees a context.
  *
  * Frees the allocated memory and closes all files owned by `ctx`.
+ * Calling this function on `NULL` is a harmless no-op.
  *
- * @param ctx Context created by `ilog_create_file` or `ilog_load_from_file`
+ * @param ctx Context created by `ilog_{create|load_from}_file` or `NULL`
  */
 void ilog_destroy(ILogCtx* ctx);
 
