@@ -54,9 +54,8 @@ struct ILog {
 };
 
 
-/* TODO(phymod0): Split static functions into declarations + definitions */
-/* TODO(phymod0): Remove unneccessary functions in the end */
-/* TODO(phymod0): Move definitions to bottom of file preserving order */
+/* TODO(phymod0): Remove unneccessary functions/macros in the end */
+/* TODO(phymod0): Create vector ADT and use for field names */
 void set_last_error(const char* error);
 static char* str_dup(const char* str);
 void safe_free(void* mem);
@@ -66,9 +65,10 @@ ILogError db_fetch_fields(const sqlite3* db, char*** fields, size_t* n_fields,
 			  int* err);
 ILogError db_set_fields(const sqlite3* db, const char** fields, size_t n_fields,
 			int* err);
-ILogError try_db_open(const char* filename, sqlite3** db_dst,
-		      char*** fields_dst, size_t* n_fields_dst, int* err_dst);
-ILogError try_db_create_and_open(const char* filename, sqlite3** db_dst,
+ILogCtx* ctx_create(void);
+void ctx_destroy(ILogCtx* ctx);
+ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst);
+ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename,
 				 const char** fields, size_t n_fields,
 				 int* err_dst);
 
@@ -80,21 +80,15 @@ ILogError ilog_create_file(const char* filename, const char* fields[],
 	int ilog_error = 0;
 	ILogCtx* result = NULL;
 
-	LOGGER_DEBUG("Attempting to create SQL database at %s with %lu fields",
+	LOGGER_DEBUG("Attempting to open SQL database at %s with %lu fields",
 		     filename, n_fields);
 
-	if (ALLOC(result) == NULL) {
-		LOGGER_ERROR("Insufficient memory for context creation");
-		set_last_error("Out of memory");
+	if ((result = ctx_create()) == NULL) {
 		ilog_error = ILOG_ENOMEM;
 		goto error;
 	}
-	result->db = NULL;
-	result->fields = NULL;
-	result->n_fields = 0;
 
-	ilog_error = try_db_open(filename, &result->db, &result->fields,
-				 &result->n_fields, &err);
+	ilog_error = try_db_open(result, filename, &err);
 	if (ilog_error == ILOG_ESUCCESS && err == SQLITE_OK &&
 	    result->db != NULL) {
 		goto success;
@@ -108,21 +102,18 @@ ILogError ilog_create_file(const char* filename, const char* fields[],
 	}
 	result->n_fields = n_fields;
 
-	LOGGER_DEBUG("No database found at %s, trying to create", filename);
-	ilog_error = try_db_create_and_open(filename, &result->db, fields,
-					    n_fields, &err);
+	LOGGER_DEBUG("Could not open database at %s, trying to create",
+		     filename);
+	ilog_error =
+	    try_db_create_and_open(result, filename, fields, n_fields, &err);
 	if (ilog_error == ILOG_ESUCCESS && err == SQLITE_OK &&
 	    result->db != NULL) {
 		goto success;
 	}
 
 error:
+	ctx_destroy(result);
 	*ctx = NULL;
-	if (result != NULL) {
-		sqlite3_close(result->db);
-		safe_free_str_vector(result->fields, result->n_fields);
-		free(result);
-	}
 	return ilog_error;
 
 success:
@@ -133,13 +124,36 @@ success:
 
 ILogError ilog_load_from_file(const char* filename, ILogCtx** ctx)
 {
-	(void)filename;
-	(void)ctx;
+	int err = 0;
+	int ilog_error = 0;
+	ILogCtx* result = NULL;
+
+	LOGGER_DEBUG("Attempting to load SQL database at %s", filename);
+
+	if ((result = ctx_create()) == NULL) {
+		ilog_error = ILOG_ENOMEM;
+		goto error;
+	}
+
+	ilog_error = try_db_open(result, filename, &err);
+	if (ilog_error != ILOG_ESUCCESS || err != SQLITE_OK ||
+	    result->db == NULL) {
+		LOGGER_ERROR("Could not open database at %s", filename);
+		set_last_error("Failed to open database");
+		goto error;
+	}
+
+	*ctx = result;
 	return ILOG_ESUCCESS;
+
+error:
+	ctx_destroy(result);
+	*ctx = NULL;
+	return ilog_error;
 }
 
 
-void ilog_destroy(ILogCtx* ctx) { (void)ctx; }
+void ilog_destroy(ILogCtx* ctx) { ctx_destroy(ctx); }
 
 
 ILogError ilog_get_logs(ILogCtx* ctx, size_t start, ILogFilter* filter,
@@ -350,8 +364,33 @@ ILogError db_set_fields(const sqlite3* db, const char** fields, size_t n_fields,
 }
 
 
-ILogError try_db_open(const char* filename, sqlite3** db_dst,
-		      char*** fields_dst, size_t* n_fields_dst, int* err_dst)
+ILogCtx* ctx_create(void)
+{
+	ILogCtx* ctx = NULL;
+	if (ALLOC(ctx) == NULL) {
+		LOGGER_ERROR("Insufficient memory for context creation");
+		set_last_error("Out of memory");
+		return NULL;
+	}
+	ctx->db = NULL;
+	ctx->fields = NULL;
+	ctx->n_fields = 0;
+	return ctx;
+}
+
+
+void ctx_destroy(ILogCtx* ctx)
+{
+	if (ctx == NULL) {
+		return;
+	}
+	sqlite3_close(ctx->db);
+	safe_free_str_vector(ctx->fields, ctx->n_fields);
+	free(ctx);
+}
+
+
+ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst)
 {
 	int err = 0;
 	ILogError ilog_error = 0;
@@ -381,9 +420,9 @@ ILogError try_db_open(const char* filename, sqlite3** db_dst,
 		goto error;
 	}
 
-	*db_dst = db;
-	*fields_dst = fields;
-	*n_fields_dst = n_fields;
+	ctx->db = db;
+	ctx->fields = fields;
+	ctx->n_fields = n_fields;
 	*err_dst = err;
 	LOGGER_INFO("Opened database at %s", filename);
 	set_last_error("Successful");
@@ -392,15 +431,15 @@ ILogError try_db_open(const char* filename, sqlite3** db_dst,
 error:
 	sqlite3_close(db);
 	safe_free_str_vector(fields, n_fields);
-	*db_dst = NULL;
-	*fields_dst = NULL;
-	*n_fields_dst = 0;
+	ctx->db = NULL;
+	ctx->fields = NULL;
+	ctx->n_fields = 0;
 	*err_dst = err;
 	return ilog_error;
 }
 
 
-ILogError try_db_create_and_open(const char* filename, sqlite3** db_dst,
+ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename,
 				 const char** fields, size_t n_fields,
 				 int* err_dst)
 {
@@ -431,7 +470,7 @@ ILogError try_db_create_and_open(const char* filename, sqlite3** db_dst,
 		goto error;
 	}
 
-	*db_dst = db;
+	ctx->db = db;
 	*err_dst = err;
 	LOGGER_INFO("Created database at %s", filename);
 	set_last_error("Successful");
@@ -439,7 +478,7 @@ ILogError try_db_create_and_open(const char* filename, sqlite3** db_dst,
 
 error:
 	sqlite3_close(db);
-	*db_dst = NULL;
+	ctx->db = NULL;
 	*err_dst = err;
 	return ilog_error;
 }
