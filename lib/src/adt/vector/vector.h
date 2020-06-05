@@ -8,6 +8,9 @@
 #define VECTOR
 
 
+#include <stddef.h>
+
+
 /** Operations on vector elements */
 typedef struct {
 	/** Destructor for the object pointed to by `E` */
@@ -25,7 +28,7 @@ typedef struct {
  * Instantiate a vector.
  *
  * `ops` will be copied rather than borrowed. Operations can safely be passed as
- * `NULL` pointers as an alternative to their respective stub implementations
+ * `NULL` pointers as an alternative to their respective default implementations
  * (harmless no-op for `dtor`, the identity function for `copy` and the zero
  * function for the rest). `ops` itself can be `NULL` as an alternative to
  * passing all operations as `NULL` pointers. The returned vector should be
@@ -40,20 +43,25 @@ void** vector_create(const VectorElementOps* ops);
  * Destroy a vector.
  *
  * `dtor`, if provided to `vector_create`, will be called exactly once on each
- * `void` pointer in the vector.
+ * `void` pointer in the vector. Calling this function on `NULL` is a harmless
+ * no-op.
  * @see vector_create
  *
- * @param vector A pointer returned by `vector_create`
+ * @param vector Pointer returned by `vector_create` or `NULL`
  */
-void vector_destroy(void* vector);
+void vector_destroy(void** vector);
 
 /**
  * Insert an element into a vector.
  *
- * TODO(phymod0)
+ * `data` will be appended to the vector as-is and the object it points to will
+ * not be copied.
+ *
+ * @param vector Pointer returned by `vector_create`
+ * @param data Pointer to the data to be copied
+ * @return `0` if successful, `-1` if out of memory
  */
-
-/* TODO(phymod0): Implement only the necessary parts */
+int vector_insert(void** vector, void* data);
 
 
 #endif /* VECTOR */
