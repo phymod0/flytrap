@@ -2,6 +2,7 @@
 
 
 #include "../../../adt/trie/trie.h"
+#include "../../../adt/vector/vector.h"
 #include "../../../utils/logger.h"
 #include "ilog.h"
 
@@ -31,8 +32,7 @@ typedef enum {
 
 struct ILogCtx {
 	sqlite3* db;
-	char** fields;
-	size_t n_fields;
+	Vector fields;
 };
 
 struct ILogFilter {
@@ -55,22 +55,17 @@ struct ILog {
 
 
 /* TODO(phymod0): Remove unneccessary functions/macros in the end */
-/* TODO(phymod0): Create vector ADT and use for field names */
-void set_last_error(const char* error);
+static void set_last_error(const char* error);
 static char* str_dup(const char* str);
-void safe_free(void* mem);
-void safe_free_str_vector(char** vec, size_t sz);
-char** copy_str_vector(const char** src, size_t sz);
-ILogError db_fetch_fields(const sqlite3* db, char*** fields, size_t* n_fields,
-			  int* err);
-ILogError db_set_fields(const sqlite3* db, const char** fields, size_t n_fields,
-			int* err);
-ILogCtx* ctx_create(void);
-void ctx_destroy(ILogCtx* ctx);
-ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst);
-ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename,
-				 const char** fields, size_t n_fields,
-				 int* err_dst);
+static void* str_dup_void(const void* str);
+static Vector str_vector_from(const char** strings, size_t sz);
+static ILogError db_fetch_fields(const sqlite3* db, Vector* fields, int* err);
+static ILogError db_set_fields(const sqlite3* db, Vector fields, int* err);
+static ILogCtx* ctx_create(void);
+static void ctx_destroy(ILogCtx* ctx);
+static ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst);
+static ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename,
+					int* err_dst);
 
 
 ILogError ilog_create_file(const char* filename, const char* fields[],
@@ -94,18 +89,16 @@ ILogError ilog_create_file(const char* filename, const char* fields[],
 		goto success;
 	}
 
-	if ((result->fields = copy_str_vector(fields, n_fields)) == NULL) {
+	if ((result->fields = str_vector_from(fields, n_fields)) == NULL) {
 		LOGGER_ERROR("Insufficient memory for copying field names");
 		set_last_error("Out of memory");
 		ilog_error = ILOG_ENOMEM;
 		goto error;
 	}
-	result->n_fields = n_fields;
 
 	LOGGER_DEBUG("Could not open database at %s, trying to create",
 		     filename);
-	ilog_error =
-	    try_db_create_and_open(result, filename, fields, n_fields, &err);
+	ilog_error = try_db_create_and_open(result, filename, &err);
 	if (ilog_error == ILOG_ESUCCESS && err == SQLITE_OK &&
 	    result->db != NULL) {
 		goto success;
@@ -295,7 +288,7 @@ void ilog_filter_destroy(ILogFilter* filter) { (void)filter; }
 const char* ilog_last_error_str(void) { return __last_error; }
 
 
-void set_last_error(const char* error) { __last_error = error; }
+static void set_last_error(const char* error) { __last_error = error; }
 
 
 static char* str_dup(const char* str)
@@ -309,62 +302,36 @@ static char* str_dup(const char* str)
 }
 
 
-void safe_free(void* mem)
+static void* str_dup_void(const void* str) { return str_dup(str); }
+
+
+static Vector str_vector_from(const char** strings, size_t sz)
 {
-	if (mem) {
-		free(mem);
-	}
-}
-
-
-void safe_free_str_vector(char** vec, size_t sz)
-{
-	if (vec == NULL) {
-		return;
-	}
-	for (size_t i = 0; i < sz; ++i) {
-		if (vec[i]) {
-			free(vec[i]);
-		} else {
-			break;
-		}
-	}
-	free(vec);
-}
-
-
-char** copy_str_vector(const char** src, size_t sz)
-{
-	char** copy = NULL;
-	if (VALLOC(copy, sz) == NULL) {
-		goto oom;
+	Vector vector = vector_create(&(VectorElementOps){
+	    .dtor = free,
+	    .copy = str_dup_void,
+	});
+	if (vector == NULL) {
+		return NULL;
 	}
 	for (size_t i = 0; i < sz; ++i) {
-		if ((copy[i] = str_dup(src[i])) == NULL) {
-			goto oom;
+		const void* to_insert = strings[i];
+		if (vector_copy_and_insert(&vector, to_insert) < 0) {
+			vector_destroy(vector);
+			return NULL;
 		}
 	}
-	return copy;
-
-oom:
-	safe_free_str_vector(copy, sz);
-	return NULL;
+	return vector;
 }
 
 
-ILogError db_fetch_fields(const sqlite3* db, char*** fields, size_t* n_fields,
-			  int* err)
-{
-}
+static ILogError db_fetch_fields(const sqlite3* db, Vector* fields, int* err) {}
 
 
-ILogError db_set_fields(const sqlite3* db, const char** fields, size_t n_fields,
-			int* err)
-{
-}
+static ILogError db_set_fields(const sqlite3* db, Vector fields, int* err) {}
 
 
-ILogCtx* ctx_create(void)
+static ILogCtx* ctx_create(void)
 {
 	ILogCtx* ctx = NULL;
 	if (ALLOC(ctx) == NULL) {
@@ -374,29 +341,27 @@ ILogCtx* ctx_create(void)
 	}
 	ctx->db = NULL;
 	ctx->fields = NULL;
-	ctx->n_fields = 0;
 	return ctx;
 }
 
 
-void ctx_destroy(ILogCtx* ctx)
+static void ctx_destroy(ILogCtx* ctx)
 {
 	if (ctx == NULL) {
 		return;
 	}
 	sqlite3_close(ctx->db);
-	safe_free_str_vector(ctx->fields, ctx->n_fields);
+	vector_destroy(ctx->fields);
 	free(ctx);
 }
 
 
-ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst)
+static ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst)
 {
 	int err = 0;
 	ILogError ilog_error = 0;
 	sqlite3* db = NULL;
-	char** fields = NULL;
-	size_t n_fields = 0;
+	Vector fields = NULL;
 
 	err = sqlite3_open_v2(filename, &db, SQLITE_OPEN_READWRITE, NULL);
 	if (err != SQLITE_OK || db == NULL) {
@@ -407,7 +372,7 @@ ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst)
 	}
 
 	LOGGER_DEBUG("Opened database file at %s", filename);
-	ilog_error = db_fetch_fields(db, &fields, &n_fields, &err);
+	ilog_error = db_fetch_fields(db, &fields, &err);
 	if (ilog_error == ILOG_ENOMEM) {
 		LOGGER_ERROR("Insufficient memory for copying database fields");
 		set_last_error("Out of memory");
@@ -422,7 +387,6 @@ ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst)
 
 	ctx->db = db;
 	ctx->fields = fields;
-	ctx->n_fields = n_fields;
 	*err_dst = err;
 	LOGGER_INFO("Opened database at %s", filename);
 	set_last_error("Successful");
@@ -430,18 +394,16 @@ ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst)
 
 error:
 	sqlite3_close(db);
-	safe_free_str_vector(fields, n_fields);
+	vector_destroy(fields);
 	ctx->db = NULL;
 	ctx->fields = NULL;
-	ctx->n_fields = 0;
 	*err_dst = err;
 	return ilog_error;
 }
 
 
-ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename,
-				 const char** fields, size_t n_fields,
-				 int* err_dst)
+static ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename,
+					int* err_dst)
 {
 	int err = 0;
 	ILogError ilog_error = 0;
@@ -457,7 +419,7 @@ ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename,
 	}
 
 	LOGGER_DEBUG("Created database file at %s", filename);
-	ilog_error = db_set_fields(db, fields, n_fields, &err);
+	ilog_error = db_set_fields(db, ctx->fields, &err);
 	if (ilog_error == ILOG_ENOMEM) {
 		LOGGER_ERROR("Insufficient memory for setting database fields");
 		set_last_error("Out of memory");
