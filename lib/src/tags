@@ -13,6 +13,7 @@ CSV_CURSOR_END	csv_logger/csv_logger.h	/^	CSV_CURSOR_END,$/;"	e	enum:__anon68d43
 CSV_FILE_ERROR	csv_logger/csv_logger.h	/^	CSV_FILE_ERROR,$/;"	e	enum:__anon68d437200103
 CSV_NO_MEMORY	csv_logger/csv_logger.h	/^	CSV_NO_MEMORY,$/;"	e	enum:__anon68d437200103
 CSV_SUCCESS	csv_logger/csv_logger.h	/^	CSV_SUCCESS,$/;"	e	enum:__anon68d437200103
+ConstVectorElement	adt/vector/vector.h	/^typedef const void* ConstVectorElement;$/;"	t	typeref:typename:const void *
 CsvCtx	csv_logger/csv_logger.h	/^typedef struct csv_ctx CsvCtx;$/;"	t	typeref:struct:csv_ctx
 CsvCursor	csv_logger/csv_logger.h	/^typedef struct csv_cursor CsvCursor;$/;"	t	typeref:struct:csv_cursor
 CsvError	csv_logger/csv_logger.h	/^} CsvError;$/;"	t	typeref:enum:__anon68d437200103
@@ -119,6 +120,8 @@ VALLOC	adt/trie/trie.c	/^#define VALLOC(/;"	d	file:
 VALLOC	rest/modules/interaction/ilog_sql.c	/^#define VALLOC(/;"	d	file:
 VECTOR	adt/vector/vector.h	/^#define VECTOR$/;"	d
 VECTOR_DATA_OFFSET	adt/vector/vector.c	/^#define VECTOR_DATA_OFFSET /;"	d	file:
+Vector	adt/vector/vector.h	/^typedef VectorElement* Vector;$/;"	t	typeref:typename:VectorElement *
+VectorElement	adt/vector/vector.h	/^typedef void* VectorElement;$/;"	t	typeref:typename:void *
 VectorElementOps	adt/vector/vector.h	/^} VectorElementOps;$/;"	t	typeref:struct:__anonb9f146780108
 VectorHeader	adt/vector/vector.c	/^} VectorHeader;$/;"	t	typeref:struct:__anonb9f146730108	file:
 __anon68d437200103	csv_logger/csv_logger.h	/^typedef enum {$/;"	g
@@ -132,11 +135,11 @@ __anonb9f146780108	adt/vector/vector.h	/^typedef struct {$/;"	s
 __anoned1784ad0108	rest/server_ctx.h	/^typedef struct {$/;"	s
 __anoned1784ad0208	rest/server_ctx.h	/^typedef struct {$/;"	s
 __last_error	rest/modules/interaction/ilog_sql.c	/^static const char* __last_error = "No error";$/;"	v	typeref:typename:const char *	file:
-add_element	adt/vector/vector.c	/^static inline void add_element(VectorHeader* header, void* element)$/;"	f	typeref:typename:void	file:
+add_element	adt/vector/vector.c	/^static inline void add_element(VectorHeader* header, VectorElement element)$/;"	f	typeref:typename:void	file:
 add_strs	adt/trie/trie.c	/^static char* add_strs(const char* str1, const char* str2)$/;"	f	typeref:typename:char *	file:
 add_strs	rest/modules/static_pages/handlers.c	/^static char* add_strs(const char* str1, const char* str2)$/;"	f	typeref:typename:char *	file:
 base	rest/rest.c	/^	struct event_base* base;$/;"	m	struct:RestCtx	typeref:struct:event_base *	file:
-binop_vanish	adt/vector/vector.c	/^static int binop_vanish(void* A, void* B)$/;"	f	typeref:typename:int	file:
+binop_vanish	adt/vector/vector.c	/^static int binop_vanish(VectorElement A, VectorElement B)$/;"	f	typeref:typename:int	file:
 capacity	adt/vector/vector.c	/^	size_t capacity;$/;"	m	struct:__anonb9f146730108	typeref:typename:size_t	file:
 captive_portal_handlers	rest/modules/captive_portal/handlers.c	/^const HTTPHandler captive_portal_handlers[] = {$/;"	v	typeref:typename:const HTTPHandler[]
 children	adt/trie/trie.c	/^	struct TrieNode* children;$/;"	m	struct:TrieNode	typeref:struct:TrieNode *	file:
@@ -144,36 +147,35 @@ children	rest/modules/interaction/ilog_sql.c	/^	struct ILogFilter* children[2];$
 config	rest/server_ctx.h	/^	ServerConfig config;$/;"	m	struct:__anoned1784ad0208	typeref:typename:ServerConfig
 content_type	rest/modules/static_pages/handlers.c	/^	const char* content_type;$/;"	m	struct:table_entry	typeref:typename:const char *	file:
 content_type_table	rest/modules/static_pages/handlers.c	/^} content_type_table[] = {$/;"	v	typeref:typename:const struct table_entry[]
-copy	adt/vector/vector.h	/^	void* (*copy)(void* E);$/;"	m	struct:__anonb9f146780108	typeref:typename:void * (*)(void * E)
+copy	adt/vector/vector.h	/^	VectorElement (*copy)(ConstVectorElement E);$/;"	m	struct:__anonb9f146780108	typeref:typename:VectorElement (*)(ConstVectorElement E)
 copy_ops	adt/vector/vector.c	/^static VectorElementOps* copy_ops(const VectorElementOps* ops)$/;"	f	typeref:typename:VectorElementOps *	file:
-copy_str_vector	rest/modules/interaction/ilog_sql.c	/^char** copy_str_vector(const char** src, size_t sz)$/;"	f	typeref:typename:char **
 create_subtree	adt/string_tree/string_tree.c	/^static StringTree* create_subtree(StringTree* tree, const char* node)$/;"	f	typeref:typename:StringTree *	file:
 create_with_capacity	adt/vector/vector.c	/^static VectorHeader* create_with_capacity(size_t capacity)$/;"	f	typeref:typename:VectorHeader *	file:
 ctx	rest/modules/interaction/ilog_sql.c	/^	struct ILogCtx* ctx;$/;"	m	struct:ILogCursor	typeref:struct:ILogCtx *	file:
-ctx_create	rest/modules/interaction/ilog_sql.c	/^ILogCtx* ctx_create(void)$/;"	f	typeref:typename:ILogCtx *
-ctx_destroy	rest/modules/interaction/ilog_sql.c	/^void ctx_destroy(ILogCtx* ctx)$/;"	f	typeref:typename:void
+ctx_create	rest/modules/interaction/ilog_sql.c	/^static ILogCtx* ctx_create(void)$/;"	f	typeref:typename:ILogCtx *	file:
+ctx_destroy	rest/modules/interaction/ilog_sql.c	/^static void ctx_destroy(ILogCtx* ctx)$/;"	f	typeref:typename:void	file:
 cursor	rest/modules/interaction/ilog_sql.c	/^	sqlite3_stmt* cursor;$/;"	m	struct:ILogCursor	typeref:typename:sqlite3_stmt *	file:
 db	rest/modules/interaction/ilog_sql.c	/^	sqlite3* db;$/;"	m	struct:ILogCtx	typeref:typename:sqlite3 *	file:
-db_fetch_fields	rest/modules/interaction/ilog_sql.c	/^ILogError db_fetch_fields(const sqlite3* db, char*** fields, size_t* n_fields,$/;"	f	typeref:typename:ILogError
-db_set_fields	rest/modules/interaction/ilog_sql.c	/^ILogError db_set_fields(const sqlite3* db, const char** fields, size_t n_fields,$/;"	f	typeref:typename:ILogError
+db_fetch_fields	rest/modules/interaction/ilog_sql.c	/^static ILogError db_fetch_fields(const sqlite3* db, Vector* fields, int* err) {}$/;"	f	typeref:typename:ILogError	file:
+db_set_fields	rest/modules/interaction/ilog_sql.c	/^static ILogError db_set_fields(const sqlite3* db, Vector fields, int* err) {}$/;"	f	typeref:typename:ILogError	file:
 destructor_t	adt/trie/trie.c	/^typedef void (*destructor_t)(void*);$/;"	t	typeref:typename:void (*)(void *)	file:
 docroot	rest/server_ctx.h	/^	char* docroot;$/;"	m	struct:__anoned1784ad0108	typeref:typename:char *
 document_request_cb	rest/rest.c	/^static void document_request_cb(struct evhttp_request* req, const char* path,$/;"	f	typeref:typename:void	file:
 document_request_handler	rest/modules/static_pages/handlers.c	/^int document_request_handler(void* server_ctx, struct evhttp_request* req,$/;"	f	typeref:typename:int
 dtor	adt/trie/stack.h	/^	void (*dtor)(void*); \/**< Destructor for an inserted value. *\/$/;"	m	struct:stack_ops	typeref:typename:void (*)(void *)
 dtor	adt/trie/trie.h	/^	void (*dtor)(void*);       \/**< Destructor for an inserted value. *\/$/;"	m	struct:TrieOps	typeref:typename:void (*)(void *)
-dtor	adt/vector/vector.h	/^	void (*dtor)(void* E);$/;"	m	struct:__anonb9f146780108	typeref:typename:void (*)(void * E)
-equal	adt/vector/vector.h	/^	int (*equal)(void* A, void* B);$/;"	m	struct:__anonb9f146780108	typeref:typename:int (*)(void * A,void * B)
+dtor	adt/vector/vector.h	/^	void (*dtor)(VectorElement E);$/;"	m	struct:__anonb9f146780108	typeref:typename:void (*)(VectorElement E)
+equal	adt/vector/vector.h	/^	int (*equal)(VectorElement A, VectorElement B);$/;"	m	struct:__anonb9f146780108	typeref:typename:int (*)(VectorElement A,VectorElement B)
 event_base_create_and_init	rest/rest.c	/^static struct event_base* event_base_create_and_init(struct event** sigterm)$/;"	f	typeref:struct:event_base *	file:
 extension	rest/modules/static_pages/handlers.c	/^	const char* extension;$/;"	m	struct:table_entry	typeref:typename:const char *	file:
 field_value_map	rest/modules/interaction/ilog_sql.c	/^	Trie* field_value_map;$/;"	m	struct:ILog	typeref:typename:Trie *	file:
-fields	rest/modules/interaction/ilog_sql.c	/^	char** fields;$/;"	m	struct:ILogCtx	typeref:typename:char **	file:
+fields	rest/modules/interaction/ilog_sql.c	/^	Vector fields;$/;"	m	struct:ILogCtx	typeref:typename:Vector	file:
 file_request_handler	rest/rest.c	/^	HTTPFileRequestHandler file_request_handler;$/;"	m	struct:RestCtx	typeref:typename:HTTPFileRequestHandler	file:
 filter_type	rest/modules/interaction/ilog_sql.c	/^	ILogFilterType filter_type;$/;"	m	struct:ILogFilter	typeref:typename:ILogFilterType	file:
 find_mismatch	adt/trie/trie.c	/^static void find_mismatch(Trie* trie, const char* key, TrieNode** node_p,$/;"	f	typeref:typename:void	file:
 find_path_subtree	rest/rest.c	/^static StringTree* find_path_subtree(StringTree* tree, const char* path,$/;"	f	typeref:typename:StringTree *	file:
 generic_handler_cb	rest/rest.c	/^static void generic_handler_cb(struct evhttp_request* req, void* data)$/;"	f	typeref:typename:void	file:
-get_header	adt/vector/vector.c	/^static inline VectorHeader* get_header(void** vector)$/;"	f	typeref:typename:VectorHeader *	file:
+get_header	adt/vector/vector.c	/^static inline VectorHeader* get_header(Vector vector)$/;"	f	typeref:typename:VectorHeader *	file:
 get_method_str	rest/rest.c	/^static const char* get_method_str(enum evhttp_cmd_type method)$/;"	f	typeref:typename:const char *	file:
 get_new_capacity	adt/vector/vector.c	/^static inline size_t get_new_capacity(size_t new_size, size_t capacity)$/;"	f	typeref:typename:size_t	file:
 get_path_subtree	rest/rest.c	/^static StringTree* get_path_subtree(StringTree* tree, const char* path)$/;"	f	typeref:typename:StringTree *	file:
@@ -184,7 +186,7 @@ handle_signal	rest/rest.c	/^static void handle_signal(int sig, short events, voi
 handlers	rest/rest.c	/^	StringTree* handlers;$/;"	m	struct:RestCtx	typeref:typename:StringTree *	file:
 head	adt/trie/stack.c	/^	StackElem* head;$/;"	m	struct:stack	typeref:typename:StackElem *	file:
 http	rest/rest.c	/^	struct evhttp* http;$/;"	m	struct:RestCtx	typeref:struct:evhttp *	file:
-identity	adt/vector/vector.c	/^static void* identity(void* E) { return E; }$/;"	f	typeref:typename:void *	file:
+identity	adt/vector/vector.c	/^static VectorElement identity(ConstVectorElement E) { return (VectorElement)E; }$/;"	f	typeref:typename:VectorElement	file:
 ilog_create_file	rest/modules/interaction/ilog_sql.c	/^ILogError ilog_create_file(const char* filename, const char* fields[],$/;"	f	typeref:typename:ILogError
 ilog_create_log	rest/modules/interaction/ilog_sql.c	/^ILog* ilog_create_log() { return NULL; }$/;"	f	typeref:typename:ILog *
 ilog_cursor_destroy	rest/modules/interaction/ilog_sql.c	/^void ilog_cursor_destroy(ILogCursor* cursor) { (void)cursor; }$/;"	f	typeref:typename:void
@@ -234,7 +236,6 @@ memusage	adt/trie/trie.h	/^	size_t (*memusage)(void*); \/**< Memory usage evalua
 memusage_t	adt/trie/trie.c	/^typedef size_t (*memusage_t)(void*);$/;"	t	typeref:typename:size_t (*)(void *)	file:
 methods	rest/rest.h	/^	HTTPMethods methods;$/;"	m	struct:__anon7bdae7a60208	typeref:typename:HTTPMethods
 n_children	adt/trie/trie.c	/^	size_t n_children;$/;"	m	struct:TrieNode	typeref:typename:size_t	file:
-n_fields	rest/modules/interaction/ilog_sql.c	/^	size_t n_fields;$/;"	m	struct:ILogCtx	typeref:typename:size_t	file:
 next	adt/trie/stack.c	/^	struct stack_elem* next;$/;"	m	struct:stack_elem	typeref:struct:stack_elem *	file:
 node_addchild	adt/trie/trie.c	/^static int node_addchild(TrieNode* node, TrieNode* new_child)$/;"	f	typeref:typename:int	file:
 node_branch	adt/trie/trie.c	/^static int node_branch(TrieNode* node, char* at, TrieNode* child)$/;"	f	typeref:typename:int	file:
@@ -246,16 +247,16 @@ node_merge	adt/trie/trie.c	/^static int node_merge(TrieNode* node, destructor_t 
 node_recursive_free	adt/trie/trie.c	/^static void node_recursive_free(TrieNode* node, destructor_t dtor)$/;"	f	typeref:typename:void	file:
 node_split	adt/trie/trie.c	/^static int node_split(TrieNode* node, char* at)$/;"	f	typeref:typename:int	file:
 node_stack	adt/trie/trie.c	/^	Stack *node_stack, *keyptr_stack;$/;"	m	struct:TrieIterator	typeref:typename:Stack *	file:
-noop	adt/vector/vector.c	/^static void noop(void* E) { UNUSED(E); }$/;"	f	typeref:typename:void	file:
+noop	adt/vector/vector.c	/^static void noop(VectorElement E) { UNUSED(E); }$/;"	f	typeref:typename:void	file:
 ops	adt/trie/stack.c	/^	struct stack_ops ops;$/;"	m	struct:stack	typeref:struct:stack_ops	file:
 ops	adt/trie/trie.c	/^	struct TrieOps* ops;$/;"	m	struct:Trie	typeref:struct:TrieOps *	file:
 ops	adt/vector/vector.c	/^	VectorElementOps* ops;$/;"	m	struct:__anonb9f146730108	typeref:typename:VectorElementOps *	file:
-order	adt/vector/vector.h	/^	int (*order)(void* A, void* B);$/;"	m	struct:__anonb9f146780108	typeref:typename:int (*)(void * A,void * B)
+order	adt/vector/vector.h	/^	int (*order)(VectorElement A, VectorElement B);$/;"	m	struct:__anonb9f146780108	typeref:typename:int (*)(VectorElement A,VectorElement B)
 path	rest/rest.h	/^	const char* path;$/;"	m	struct:__anon7bdae7a60208	typeref:typename:const char *
 path_argv_create	rest/rest.c	/^static char** path_argv_create()$/;"	f	typeref:typename:char **	file:
 path_argv_destroy	rest/rest.c	/^static void path_argv_destroy(char** argv)$/;"	f	typeref:typename:void	file:
 pflen_equal	adt/trie/trie.c	/^static inline ptrdiff_t pflen_equal(const char* of, const char* with)$/;"	f	typeref:typename:ptrdiff_t	file:
-print	adt/vector/vector.h	/^	void (*print)(void* E);$/;"	m	struct:__anonb9f146780108	typeref:typename:void (*)(void * E)
+print	adt/vector/vector.h	/^	void (*print)(VectorElement E);$/;"	m	struct:__anonb9f146780108	typeref:typename:void (*)(VectorElement E)
 probe_handler	rest/modules/captive_portal/handlers.c	/^static int probe_handler(void* server_ctx, struct evhttp_request* req,$/;"	f	typeref:typename:int	file:
 raw_node_destroy	adt/trie/trie.c	/^static void raw_node_destroy(TrieNode* node)$/;"	f	typeref:typename:void	file:
 register_single_handler	rest/rest.c	/^static int register_single_handler(const HTTPHandler* handler, RestCtx* ctx)$/;"	f	typeref:typename:int	file:
@@ -272,13 +273,11 @@ rest_register_all_modules	rest/register_modules.c	/^int rest_register_all_module
 rest_register_handlers	rest/rest.c	/^int rest_register_handlers(const HTTPHandler handlers[], RestCtx* ctx)$/;"	f	typeref:typename:int
 rest_set_file_handler_cb	rest/rest.c	/^void rest_set_file_handler_cb(HTTPFileRequestHandler handler, RestCtx* ctx)$/;"	f	typeref:typename:void
 root	adt/trie/trie.c	/^	TrieNode* root;$/;"	m	struct:Trie	typeref:typename:TrieNode *	file:
-safe_free	rest/modules/interaction/ilog_sql.c	/^void safe_free(void* mem)$/;"	f	typeref:typename:void
-safe_free_str_vector	rest/modules/interaction/ilog_sql.c	/^void safe_free_str_vector(char** vec, size_t sz)$/;"	f	typeref:typename:void
 segment	adt/trie/trie.c	/^	char* segment;$/;"	m	struct:TrieNode	typeref:typename:char *	file:
 segncpy	adt/trie/trie.c	/^static inline char* segncpy(char* dest, const char* src, size_t n)$/;"	f	typeref:typename:char *	file:
 server_ctx	rest/rest.c	/^	void* server_ctx;$/;"	m	struct:RestCtx	typeref:typename:void *	file:
 server_data	rest/main.c	/^} server_data;$/;"	t	typeref:struct:__anon6fe325280108	file:
-set_last_error	rest/modules/interaction/ilog_sql.c	/^void set_last_error(const char* error) { __last_error = error; }$/;"	f	typeref:typename:void
+set_last_error	rest/modules/interaction/ilog_sql.c	/^static void set_last_error(const char* error) { __last_error = error; }$/;"	f	typeref:typename:void	file:
 size	adt/vector/vector.c	/^	size_t size;$/;"	m	struct:__anonb9f146730108	typeref:typename:size_t	file:
 stack	adt/trie/stack.c	/^struct stack {$/;"	s	file:
 stack_create	adt/trie/stack.c	/^Stack* stack_create(const struct stack_ops ops)$/;"	f	typeref:typename:Stack *
@@ -292,10 +291,12 @@ stack_push	adt/trie/stack.c	/^int stack_push(Stack* s, void* data)$/;"	f	typeref
 stack_top	adt/trie/stack.c	/^void* stack_top(Stack* s) { return s->head ? s->head->val : NULL; }$/;"	f	typeref:typename:void *
 str_dup	adt/trie/trie.c	/^static char* str_dup(const char* str)$/;"	f	typeref:typename:char *	file:
 str_dup	rest/modules/interaction/ilog_sql.c	/^static char* str_dup(const char* str)$/;"	f	typeref:typename:char *	file:
+str_dup_void	rest/modules/interaction/ilog_sql.c	/^static void* str_dup_void(const void* str) { return str_dup(str); }$/;"	f	typeref:typename:void *	file:
 str_n_dup	adt/trie/trie.c	/^static char* str_n_dup(const char* str, size_t n)$/;"	f	typeref:typename:char *	file:
 str_n_dup	rest/main.c	/^static char* str_n_dup(const char* str, size_t n)$/;"	f	typeref:typename:char *	file:
 str_ndup	rest/rest.c	/^static char* str_ndup(const char* str, size_t n)$/;"	f	typeref:typename:char *	file:
 str_value	rest/modules/interaction/ilog_sql.c	/^	char* str_value;$/;"	m	struct:ILogFilter	typeref:typename:char *	file:
+str_vector_from	rest/modules/interaction/ilog_sql.c	/^static Vector str_vector_from(const char** strings, size_t sz)$/;"	f	typeref:typename:Vector	file:
 string_tree_create	adt/string_tree/string_tree.c	/^StringTree* string_tree_create()$/;"	f	typeref:typename:StringTree *
 string_tree_destroy	adt/string_tree/string_tree.c	/^void string_tree_destroy(StringTree* tree)$/;"	f	typeref:typename:void
 string_tree_find_subtree	adt/string_tree/string_tree.c	/^StringTree* string_tree_find_subtree(const StringTree* tree, const char* node)$/;"	f	typeref:typename:StringTree *
@@ -320,17 +321,18 @@ trie_iter_step	adt/trie/trie.c	/^static bool trie_iter_step(TrieIterator** iter_
 trie_makeops	adt/trie/trie.h	/^static inline struct TrieOps trie_makeops(void (*dtor)(void*),$/;"	f	typeref:struct:TrieOps
 trie_maxkeylen_added	adt/trie/trie.c	/^size_t trie_maxkeylen_added(Trie* trie) { return trie->max_keylen_added; }$/;"	f	typeref:typename:size_t
 trie_memory_usage	adt/trie/trie.c	/^size_t trie_memory_usage(const Trie* trie)$/;"	f	typeref:typename:size_t
-try_db_create_and_open	rest/modules/interaction/ilog_sql.c	/^ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename,$/;"	f	typeref:typename:ILogError
-try_db_open	rest/modules/interaction/ilog_sql.c	/^ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst)$/;"	f	typeref:typename:ILogError
+try_db_create_and_open	rest/modules/interaction/ilog_sql.c	/^static ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename,$/;"	f	typeref:typename:ILogError	file:
+try_db_open	rest/modules/interaction/ilog_sql.c	/^static ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst)$/;"	f	typeref:typename:ILogError	file:
 val	adt/string_tree/string_tree.c	/^	void* val;$/;"	m	struct:StringTree	typeref:typename:void *	file:
 val	adt/trie/stack.c	/^	void* val;$/;"	m	struct:stack_elem	typeref:typename:void *	file:
 val_insert	adt/trie/trie.c	/^static void val_insert(TrieNode* node, void* val, destructor_t dtor)$/;"	f	typeref:typename:void	file:
 validate_path	rest/rest.c	/^static int validate_path(const char* path)$/;"	f	typeref:typename:int	file:
 value	adt/trie/trie.c	/^	void* value;$/;"	m	struct:TrieIterator	typeref:typename:void *	file:
 value	adt/trie/trie.c	/^	void* value;$/;"	m	struct:TrieNode	typeref:typename:void *	file:
-vector_create	adt/vector/vector.c	/^void** vector_create(const VectorElementOps* ops)$/;"	f	typeref:typename:void **
-vector_data	adt/vector/vector.c	/^	void* vector_data[];$/;"	m	struct:__anonb9f146730108	typeref:typename:void * []	file:
-vector_destroy	adt/vector/vector.c	/^void vector_destroy(void** vector)$/;"	f	typeref:typename:void
-vector_insert	adt/vector/vector.c	/^int vector_insert(void*** vector_ptr, void* element)$/;"	f	typeref:typename:int
-vector_print	adt/vector/vector.c	/^void vector_print(void** vector)$/;"	f	typeref:typename:void
-vector_size	adt/vector/vector.c	/^size_t vector_size(void** vector) { return get_header(vector)->size; }$/;"	f	typeref:typename:size_t
+vector_copy_and_insert	adt/vector/vector.c	/^int vector_copy_and_insert(Vector* vector_ptr, ConstVectorElement element)$/;"	f	typeref:typename:int
+vector_create	adt/vector/vector.c	/^Vector vector_create(const VectorElementOps* ops)$/;"	f	typeref:typename:Vector
+vector_data	adt/vector/vector.c	/^	VectorElement vector_data[];$/;"	m	struct:__anonb9f146730108	typeref:typename:VectorElement[]	file:
+vector_destroy	adt/vector/vector.c	/^void vector_destroy(Vector vector)$/;"	f	typeref:typename:void
+vector_insert	adt/vector/vector.c	/^int vector_insert(Vector* vector_ptr, VectorElement element)$/;"	f	typeref:typename:int
+vector_print	adt/vector/vector.c	/^void vector_print(Vector vector)$/;"	f	typeref:typename:void
+vector_size	adt/vector/vector.c	/^size_t vector_size(Vector vector) { return get_header(vector)->size; }$/;"	f	typeref:typename:size_t
