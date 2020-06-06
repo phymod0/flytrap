@@ -9,7 +9,7 @@ typedef struct {
 	size_t size;
 	size_t capacity;
 	VectorElementOps* ops;
-	void* vector_data[];
+	VectorElement vector_data[];
 } VectorHeader;
 
 
@@ -20,20 +20,20 @@ typedef struct {
 
 
 /* Default VectorElementOps */
-static void noop(void* E);
-static void* identity(void* E);
-static int binop_vanish(void* A, void* B);
+static void noop(VectorElement E);
+static VectorElement identity(ConstVectorElement E);
+static int binop_vanish(VectorElement A, VectorElement B);
 
 /* Helper functions */
 static VectorHeader* create_with_capacity(size_t capacity);
 static VectorHeader* resize(VectorHeader* header, size_t new_capacity);
 static VectorElementOps* copy_ops(const VectorElementOps* ops);
-static inline VectorHeader* get_header(void** vector);
-static inline void add_element(VectorHeader* header, void* element);
+static inline VectorHeader* get_header(Vector vector);
+static inline void add_element(VectorHeader* header, VectorElement element);
 static inline size_t get_new_capacity(size_t new_size, size_t capacity);
 
 
-void** vector_create(const VectorElementOps* ops)
+Vector vector_create(const VectorElementOps* ops)
 {
 	VectorHeader* header = NULL;
 	VectorElementOps* ops_copy = NULL;
@@ -58,7 +58,7 @@ oom:
 }
 
 
-void vector_destroy(void** vector)
+void vector_destroy(Vector vector)
 {
 	if (vector == NULL) {
 		return;
@@ -67,7 +67,7 @@ void vector_destroy(void** vector)
 	VectorHeader* header = get_header(vector);
 	size_t size = header->size;
 	VectorElementOps* ops = header->ops;
-	void (*dtor)(void*) = ops->dtor;
+	void (*dtor)(VectorElement) = ops->dtor;
 
 	for (size_t i = 0; i < size; ++i) {
 		dtor(vector[i]);
@@ -77,7 +77,7 @@ void vector_destroy(void** vector)
 }
 
 
-int vector_insert(void*** vector_ptr, void* element)
+int vector_insert(Vector* vector_ptr, VectorElement element)
 {
 	VectorHeader* header = get_header(*vector_ptr);
 	size_t capacity = header->capacity;
@@ -95,10 +95,29 @@ int vector_insert(void*** vector_ptr, void* element)
 }
 
 
-size_t vector_size(void** vector) { return get_header(vector)->size; }
+int vector_copy_and_insert(Vector* vector_ptr, ConstVectorElement element)
+{
+	VectorHeader* header = get_header(*vector_ptr);
+	VectorElementOps* ops = header->ops;
+	void (*dtor)(VectorElement) = ops->dtor;
+	void* (*copy)(ConstVectorElement) = ops->copy;
+
+	VectorElement element_copy = copy(element);
+	if (copy != NULL && element_copy == NULL) {
+		return -1;
+	}
+	if (vector_insert(vector_ptr, element_copy) < 0) {
+		dtor(element_copy);
+		return -1;
+	}
+	return 0;
+}
 
 
-void vector_print(void** vector)
+size_t vector_size(Vector vector) { return get_header(vector)->size; }
+
+
+void vector_print(Vector vector)
 {
 	if (vector == NULL) {
 		printf("NULL\n");
@@ -110,7 +129,7 @@ void vector_print(void** vector)
 	size_t capacity = header->capacity;
 	const char* header_fmt = "Size: %lu\n"
 				 "Capacity: %lu\n";
-	void (*print)(void* element) = header->ops->print;
+	void (*print)(VectorElement element) = header->ops->print;
 
 	printf(header_fmt, size, capacity);
 
@@ -127,13 +146,13 @@ void vector_print(void** vector)
 }
 
 
-static void noop(void* E) { UNUSED(E); }
+static void noop(VectorElement E) { UNUSED(E); }
 
 
-static void* identity(void* E) { return E; }
+static VectorElement identity(ConstVectorElement E) { return (VectorElement)E; }
 
 
-static int binop_vanish(void* A, void* B)
+static int binop_vanish(VectorElement A, VectorElement B)
 {
 	UNUSED(A);
 	UNUSED(B);
@@ -144,7 +163,7 @@ static int binop_vanish(void* A, void* B)
 static VectorHeader* create_with_capacity(size_t capacity)
 {
 	VectorHeader* header =
-	    malloc(sizeof *header + capacity * sizeof(void*));
+	    malloc(sizeof *header + capacity * sizeof(VectorElement));
 	if (header == NULL) {
 		return NULL;
 	}
@@ -160,8 +179,8 @@ static VectorHeader* resize(VectorHeader* header, size_t new_capacity)
 	if (header->capacity == new_capacity) {
 		return header;
 	}
-	new_header =
-	    realloc(header, sizeof *new_header + new_capacity * sizeof(void*));
+	new_header = realloc(header, sizeof *new_header +
+					 new_capacity * sizeof(VectorElement));
 	if (new_header != NULL) {
 		new_header->capacity = new_capacity;
 	}
@@ -197,13 +216,13 @@ static VectorElementOps* copy_ops(const VectorElementOps* ops)
 }
 
 
-static inline VectorHeader* get_header(void** vector)
+static inline VectorHeader* get_header(Vector vector)
 {
 	return (VectorHeader*)((char*)vector - VECTOR_DATA_OFFSET);
 }
 
 
-static inline void add_element(VectorHeader* header, void* element)
+static inline void add_element(VectorHeader* header, VectorElement element)
 {
 	header->vector_data[header->size++] = element;
 }
