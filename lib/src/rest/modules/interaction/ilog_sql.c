@@ -3,6 +3,7 @@
 
 #include "../../../adt/trie/trie.h"
 #include "../../../adt/vector/vector.h"
+#include "../../../config.h"
 #include "../../../utils/logger.h"
 #include "ilog.h"
 
@@ -54,13 +55,15 @@ struct ILog {
 };
 
 
-/* TODO(phymod0): Remove unneccessary functions/macros in the end */
+/* TODO(phymod0): Debug log everything */
+
+
 static void set_last_error(const char* error);
 static char* str_dup(const char* str);
 static void* str_dup_void(const void* str);
 static Vector str_vector_from(const char** strings, size_t sz);
-static ILogError db_fetch_fields(const sqlite3* db, Vector* fields, int* err);
-static ILogError db_set_fields(const sqlite3* db, Vector fields, int* err);
+static ILogError db_fetch_fields(sqlite3* db, Vector* fields, int* err_dst);
+static ILogError db_set_fields(const sqlite3* db, Vector fields, int* err_dst);
 static ILogCtx* ctx_create(void);
 static void ctx_destroy(ILogCtx* ctx);
 static ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst);
@@ -325,10 +328,79 @@ static Vector str_vector_from(const char** strings, size_t sz)
 }
 
 
-static ILogError db_fetch_fields(const sqlite3* db, Vector* fields, int* err) {}
+static ILogError db_fetch_fields(sqlite3* db, Vector* fields, int* err_dst)
+{
+	int err = SQLITE_OK;
+	sqlite3_stmt* stmt = NULL;
+	ILogError ilog_error = ILOG_ESUCCESS;
+	Vector result = NULL;
+	const char* sql_statement =
+	    "SELECT name FROM PRAGMA_TABLE_INFO('" ILOG_SQL_TABLENAME "');";
+
+	result = vector_create(&(VectorElementOps){
+	    .dtor = free,
+	    .copy = str_dup_void,
+	});
+	if (result == NULL) {
+		LOGGER_ERROR("Insufficient memory for vector creation");
+		ilog_error = ILOG_ENOMEM;
+		goto err;
+	}
+
+	LOGGER_DEBUG("Loading column names with query: %s", sql_statement);
+	err = sqlite3_prepare_v2(db, sql_statement, -1, &stmt, NULL);
+	if (err != SQLITE_OK || stmt == NULL) {
+		LOGGER_ERROR("Failed to prepare SQL statement: %s",
+			     sqlite3_errmsg(db));
+		ilog_error = ILOG_EINV;
+		goto err;
+	}
+
+	LOGGER_DEBUG("Found column names, reading...");
+	while (1) {
+		int step_rc = sqlite3_step(stmt);
+		if (step_rc == SQLITE_DONE) {
+			LOGGER_DEBUG("Read all column names");
+			break;
+		}
+		if (step_rc != SQLITE_ROW) {
+			LOGGER_ERROR("Failed to read row from DB: %s",
+				     sqlite3_errmsg(db));
+			err = sqlite3_finalize(stmt);
+			ilog_error = ILOG_EINV;
+			goto err;
+		}
+		const unsigned char* column_name = sqlite3_column_text(stmt, 0);
+		if (vector_copy_and_insert(&result, column_name) < 0) {
+			LOGGER_ERROR("Failed to initialize vector");
+			err = sqlite3_finalize(stmt);
+			ilog_error = ILOG_ENOMEM;
+			goto err;
+		}
+		LOGGER_DEBUG("Read column name: %s", column_name);
+	}
+
+	*fields = result;
+	*err_dst = sqlite3_finalize(stmt);
+	return ILOG_ESUCCESS;
+
+err:
+	LOGGER_DEBUG("Failed to read column names from table %s",
+		     ILOG_SQL_TABLENAME);
+	vector_destroy(result);
+	*err_dst = err;
+	return ilog_error;
+}
 
 
-static ILogError db_set_fields(const sqlite3* db, Vector fields, int* err) {}
+static ILogError db_set_fields(const sqlite3* db, Vector fields, int* err_dst)
+{
+	/* TODO(phymod0): Implement */
+	(void)db;
+	(void)fields;
+	*err_dst = SQLITE_OK;
+	return ILOG_ESUCCESS;
+}
 
 
 static ILogCtx* ctx_create(void)

@@ -26,6 +26,11 @@
 #endif /* LOGGING_ENABLE */
 
 
+#ifdef ILOG_SQL
+#define ILOG_SQL_TABLENAME "interaction_logs"
+#endif /* ILOG_SQL */
+
+
 #ifndef DEFAULT_DOCROOT
 #ifdef _WIN32
 #define DEFAULT_DOCROOT "\%UserProfile\%\\Desktop\\flytrap\\"
