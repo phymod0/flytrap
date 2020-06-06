@@ -1,5 +1,4 @@
 #include "vector.h"
-#include "../../utils/macros.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -15,15 +14,22 @@ typedef struct {
 
 #define MIN_CAPACITY 16
 #define VECTOR_DATA_OFFSET                                                     \
-	((unsigned long long)&(((VectorHeader*)NULL)->vector_data[0]))
+	((unsigned long long)((VectorHeader*)NULL)->vector_data)
+#define UNUSED(x) ((void)(x))
 
 
-static VectorHeader* vector_create_with_capacity(size_t capacity);
+/* Default VectorElementOps */
+static void noop(void* E);
+static void* identity(void* E);
+static int binop_vanish(void* A, void* B);
+
+/* Helper functions */
+static VectorHeader* create_with_capacity(size_t capacity);
+static VectorHeader* resize(VectorHeader* header, size_t new_capacity);
 static VectorElementOps* copy_ops(const VectorElementOps* ops);
-static void default_dtor(void* E);
-static void* default_copy(void* E);
-static int default_equal(void* A, void* B);
-static int default_order(void* A, void* B);
+static inline VectorHeader* get_header(void** vector);
+static inline void add_element(VectorHeader* header, void* element);
+static inline size_t get_new_capacity(size_t new_size, size_t capacity);
 
 
 void** vector_create(const VectorElementOps* ops)
@@ -31,14 +37,14 @@ void** vector_create(const VectorElementOps* ops)
 	VectorHeader* header = NULL;
 	VectorElementOps* ops_copy = NULL;
 
-	if ((header = vector_create_with_capacity(MIN_CAPACITY)) == NULL) {
+	if ((header = create_with_capacity(MIN_CAPACITY)) == NULL) {
 		goto oom;
 	}
 	if ((ops_copy = copy_ops(ops)) == NULL) {
 		goto oom;
 	}
 	header->ops = ops_copy;
-	return &header->vector_data[0];
+	return header->vector_data;
 
 oom:
 	if (header) {
@@ -57,27 +63,48 @@ void vector_destroy(void** vector)
 	if (vector == NULL) {
 		return;
 	}
-	header = (void*)((char*)vector - VECTOR_DATA_OFFSET);
+	header = get_header(vector);
 	free(header->ops);
 	free(header);
 }
 
 
-int vector_insert(void** vector, void* data)
+int vector_insert(void*** vector_ptr, void* element)
 {
-	/* TODO(phymod0): Implement */
-	/*
-	 * TODO(phymod0): Invariant: Size must be within interquartile range of
-	 * capacity if capacity is not minimum. Otherwise size must be less than
-	 * 3/4th of capacity.
-	 */
-	(void)vector;
-	(void)data;
-	return -1;
+	VectorHeader* header = get_header(*vector_ptr);
+	size_t capacity = header->capacity;
+	VectorHeader* new_header = NULL;
+	size_t new_capacity = get_new_capacity(header->size + 1, capacity);
+	VectorElementOps* ops = header->ops;
+
+	if ((new_header = resize(header, new_capacity)) == NULL) {
+		return -1;
+	}
+	new_header->ops = ops;
+	add_element(new_header, element);
+	*vector_ptr = new_header->vector_data;
+	return 0;
 }
 
 
-static VectorHeader* vector_create_with_capacity(size_t capacity)
+size_t vector_size(void** vector) { return get_header(vector)->size; }
+
+
+static void noop(void* E) { UNUSED(E); }
+
+
+static void* identity(void* E) { return E; }
+
+
+static int binop_vanish(void* A, void* B)
+{
+	UNUSED(A);
+	UNUSED(B);
+	return 0;
+}
+
+
+static VectorHeader* create_with_capacity(size_t capacity)
 {
 	VectorHeader* header =
 	    malloc(sizeof *header + capacity * sizeof(void*));
@@ -87,6 +114,21 @@ static VectorHeader* vector_create_with_capacity(size_t capacity)
 	header->size = 0;
 	header->capacity = capacity;
 	return header;
+}
+
+
+static VectorHeader* resize(VectorHeader* header, size_t new_capacity)
+{
+	VectorHeader* new_header = NULL;
+	if (header->capacity == new_capacity) {
+		return header;
+	}
+	new_header =
+	    realloc(header, sizeof *new_header + new_capacity * sizeof(void*));
+	if (new_header != NULL) {
+		new_header->capacity = new_capacity;
+	}
+	return new_header;
 }
 
 
@@ -100,41 +142,48 @@ static VectorElementOps* copy_ops(const VectorElementOps* ops)
 		memcpy(copy, ops, sizeof *ops);
 	}
 	if (copy->dtor == NULL) {
-		copy->dtor = default_dtor;
+		copy->dtor = noop;
+	}
+	if (copy->print == NULL) {
+		copy->dtor = noop;
 	}
 	if (copy->copy == NULL) {
-		copy->copy = default_copy;
+		copy->copy = identity;
 	}
 	if (copy->equal == NULL) {
-		copy->equal = default_equal;
+		copy->equal = binop_vanish;
 	}
 	if (copy->order == NULL) {
-		copy->order = default_order;
+		copy->order = binop_vanish;
 	}
 	return copy;
 }
 
 
-static void default_dtor(void* E) { FT_UNUSED(E); }
-
-
-static void* default_copy(void* E) { return E; }
-
-
-static int default_equal(void* A, void* B)
+static inline VectorHeader* get_header(void** vector)
 {
-	FT_UNUSED(A);
-	FT_UNUSED(B);
-	return 0;
+	return (VectorHeader*)((char*)vector - VECTOR_DATA_OFFSET);
 }
 
 
-static int default_order(void* A, void* B)
+static inline void add_element(VectorHeader* header, void* element)
 {
-	FT_UNUSED(A);
-	FT_UNUSED(B);
-	return 0;
+	header->vector_data[header->size++] = element;
 }
 
+
+static inline size_t get_new_capacity(size_t new_size, size_t capacity)
+{
+	if (4 * new_size >= 3 * capacity) {
+		return 2 * capacity;
+	}
+	if (capacity != MIN_CAPACITY && 4 * new_size < capacity) {
+		return capacity / 2;
+	}
+	return capacity;
+}
+
+
+#undef UNUSED
 #undef VECTOR_DATA_OFFSET
 #undef MIN_CAPACITY
