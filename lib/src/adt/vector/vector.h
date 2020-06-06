@@ -75,5 +75,14 @@ int vector_insert(void*** vector_ptr, void* element);
  */
 size_t vector_size(void** vector);
 
+/**
+ * Print a vector.
+ *
+ * Prints "NULL" on a dedicated line if called with `NULL`.
+ *
+ * @param vector Pointer returned by `vector_create` or `NULL`
+ */
+void vector_print(void** vector);
+
 
 #endif /* VECTOR */

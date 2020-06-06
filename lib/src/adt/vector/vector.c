@@ -1,5 +1,6 @@
 #include "vector.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -88,6 +89,35 @@ int vector_insert(void*** vector_ptr, void* element)
 
 
 size_t vector_size(void** vector) { return get_header(vector)->size; }
+
+
+void vector_print(void** vector)
+{
+	if (vector == NULL) {
+		printf("NULL\n");
+		return;
+	}
+
+	VectorHeader* header = get_header(vector);
+	size_t size = header->size;
+	size_t capacity = header->capacity;
+	const char* header_fmt = "Size: %lu\n"
+				 "Capacity: %lu\n";
+	void (*print)(void* element) = header->ops->print;
+
+	printf(header_fmt, size, capacity);
+
+	if (print == NULL) {
+		return;
+	}
+	printf("Elements: [");
+	for (size_t i = 0; i < size; ++i) {
+		printf("\n\t");
+		print(header->vector_data[i]);
+		printf(",");
+	}
+	printf(size > 0 ? "\n]\n" : " ]\n");
+}
 
 
 static void noop(void* E) { UNUSED(E); }
