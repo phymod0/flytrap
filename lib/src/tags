@@ -332,4 +332,5 @@ vector_create	adt/vector/vector.c	/^void** vector_create(const VectorElementOps*
 vector_data	adt/vector/vector.c	/^	void* vector_data[];$/;"	m	struct:__anonb9f146730108	typeref:typename:void * []	file:
 vector_destroy	adt/vector/vector.c	/^void vector_destroy(void** vector)$/;"	f	typeref:typename:void
 vector_insert	adt/vector/vector.c	/^int vector_insert(void*** vector_ptr, void* element)$/;"	f	typeref:typename:int
+vector_print	adt/vector/vector.c	/^void vector_print(void** vector)$/;"	f	typeref:typename:void
 vector_size	adt/vector/vector.c	/^size_t vector_size(void** vector) { return get_header(vector)->size; }$/;"	f	typeref:typename:size_t
