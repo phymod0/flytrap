@@ -46,6 +46,11 @@
 },
 {
   "directory": "/root/dev/flytrap/build/lib",
+  "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3 -DILOG_SQL   -o CMakeFiles/flytrap.dir/src/adt/vector/vector.c.o   -c /root/dev/flytrap/lib/src/adt/vector/vector.c",
+  "file": "/root/dev/flytrap/lib/src/adt/vector/vector.c"
+},
+{
+  "directory": "/root/dev/flytrap/build/lib",
   "command": "/usr/bin/cc  -I/root/dev/flytrap/lib/src  -Wall -Wextra -Werror -std=c99 -pedantic -O3 -DILOG_SQL   -o CMakeFiles/flytrap.dir/src/utils/logger.c.o   -c /root/dev/flytrap/lib/src/utils/logger.c",
   "file": "/root/dev/flytrap/lib/src/utils/logger.c"
 }
