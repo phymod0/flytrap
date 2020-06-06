@@ -60,12 +60,19 @@ oom:
 
 void vector_destroy(void** vector)
 {
-	VectorHeader* header = NULL;
 	if (vector == NULL) {
 		return;
 	}
-	header = get_header(vector);
-	free(header->ops);
+
+	VectorHeader* header = get_header(vector);
+	size_t size = header->size;
+	VectorElementOps* ops = header->ops;
+	void (*dtor)(void*) = ops->dtor;
+
+	for (size_t i = 0; i < size; ++i) {
+		dtor(vector[i]);
+	}
+	free(ops);
 	free(header);
 }
 
