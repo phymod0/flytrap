@@ -12,6 +12,7 @@ add_library(flytrap
     src/adt/trie/stack.c
     src/adt/trie/trie.c
     src/adt/string_tree/string_tree.c
+    src/adt/vector/vector.c
     src/utils/logger.c
 )
 
