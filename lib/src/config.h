@@ -26,6 +26,8 @@
 #endif /* LOGGING_ENABLE */
 
 
+#define MAX_FIELDNAME_STRLEN 256
+
 #ifdef ILOG_SQL
 #define ILOG_SQL_TABLENAME "interaction_logs"
 #endif /* ILOG_SQL */

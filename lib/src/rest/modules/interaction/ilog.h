@@ -12,7 +12,8 @@
 #include <stddef.h>
 
 
-/* TODO(phymod0):
+/*
+ * TODO(phymod0):
  *    Document error message conditions for each method
  *    Write CSV/JSON exportation methods
  */
@@ -50,7 +51,8 @@ typedef struct ILog ILog;
  * If a valid database file already exists at path `filename` then calling this
  * function will have the same effect of calling `ilog_load_from_file` and the
  * `fields` and `n_fields` parameters will be ignored. If not ignored, the
- * strings in `fields` will be copied rather than borrowed.
+ * strings in `fields` will be copied rather than borrowed. Long field names
+ * will be truncated to 256 characters in length.
  * @see ilog_destroy
  * @see ilog_load_from_file
  *
@@ -69,8 +71,8 @@ ILogError ilog_create_file(const char* filename, const char* fields[],
  * The context will be allocated and initialized and it's pointer will be
  * written to `ctx`. If `ILOG_ESUCCESS` is returned, `ctx` must be freed with
  * `ilog_destroy` once no longer needed. Otherwise `*ctx` will be set to `NULL`.
- * `ILOG_EFILE` is returned if the log file at `filename` is absent.
- * `ILOG_EINV` is returned if the log file existed but failed to load.
+ * `ILOG_EFILE` is returned if the log file at `filename` is absent. `ILOG_EINV`
+ * is returned if the log file existed but failed to load.
  * @see ilog_destroy
  *
  * @param filename C-string containing the path to the log file
@@ -102,8 +104,7 @@ void ilog_destroy(ILogCtx* ctx);
  * @see ilog_cursor_destroy
  *
  * @param ctx Context created by `ilog_create_file` or `ilog_load_from_file`
- * @param start The log number to start at, or 0 to start at the most recent
- * log
+ * @param start The log number to start at, 0 denoting the most recent log
  * @param filter Pointer to an ilog filter, or NULL to disable filtering
  * @param cursor Destination address to write the new cursor pointer to
  * @return ILOG_ENOMEM, ILOG_EINV or ILOG_ESUCCESS

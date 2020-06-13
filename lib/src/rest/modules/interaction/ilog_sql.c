@@ -12,6 +12,7 @@
 
 #define ALLOC(x) ((x) = malloc(sizeof *(x)))
 #define VALLOC(x, n) ((x) = malloc((sizeof *(x)) * (n)))
+#define STRLEN(str) (sizeof(str) - 1)
 
 
 static const char* __last_error = "No error";
@@ -56,6 +57,8 @@ struct ILog {
 
 
 /* TODO(phymod0): Debug log everything */
+/* TODO(phymod0): Set last error wherever appropriate */
+/* TODO(phymod0): Set last error in helper functions, remove err_dst */
 
 
 static void set_last_error(const char* error);
@@ -63,7 +66,8 @@ static char* str_dup(const char* str);
 static void* str_dup_void(const void* str);
 static Vector str_vector_from(const char** strings, size_t sz);
 static ILogError db_fetch_fields(sqlite3* db, Vector* fields, int* err_dst);
-static ILogError db_set_fields(const sqlite3* db, Vector fields, int* err_dst);
+static char* get_create_stmt(Vector fields);
+static ILogError db_set_fields(sqlite3* db, Vector fields, int* err_dst);
 static ILogCtx* ctx_create(void);
 static void ctx_destroy(ILogCtx* ctx);
 static ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst);
@@ -380,6 +384,7 @@ static ILogError db_fetch_fields(sqlite3* db, Vector* fields, int* err_dst)
 		LOGGER_DEBUG("Read column name: %s", column_name);
 	}
 
+	LOGGER_DEBUG("Fetched %lu column names", vector_size(result));
 	*fields = result;
 	*err_dst = sqlite3_finalize(stmt);
 	return ILOG_ESUCCESS;
@@ -393,13 +398,82 @@ err:
 }
 
 
-static ILogError db_set_fields(const sqlite3* db, Vector fields, int* err_dst)
+static char* get_create_stmt(Vector fields)
 {
-	/* TODO(phymod0): Implement */
-	(void)db;
-	(void)fields;
-	*err_dst = SQLITE_OK;
+#define START                                                                  \
+	"DROP TABLE IF EXISTS " ILOG_SQL_TABLENAME ";"                         \
+	"CREATE TABLE " ILOG_SQL_TABLENAME "("
+#define DELIM " VARCHAR(255), "
+#define END ");"
+
+	size_t n = vector_size(fields);
+	size_t result_sz = 0;
+	char* result = NULL;
+
+	result_sz += STRLEN(START);
+	for (size_t i = 0; i < n; ++i) {
+		result_sz += strlen(fields[i]) + STRLEN(DELIM);
+	}
+	result_sz += STRLEN(DELIM);
+	++result_sz; // NULL-terminator
+
+	if (VALLOC(result, result_sz) == NULL) {
+		return NULL;
+	}
+	result[0] = '\0';
+	strncat(result, START, STRLEN(START));
+	for (size_t i = 0; i < n; ++i) {
+		strncat(result, fields[i], MAX_FIELDNAME_STRLEN);
+		strncat(result, DELIM, STRLEN(DELIM));
+	}
+	strncat(result, END, STRLEN(END));
+
+	return result;
+
+#undef END
+#undef DELIM
+#undef START
+}
+
+
+static ILogError db_set_fields(sqlite3* db, Vector fields, int* err_dst)
+{
+	int err = SQLITE_OK;
+	ILogError ilog_error = ILOG_ESUCCESS;
+	char* sql_statement = NULL;
+	char* errmsg = NULL;
+
+	if ((sql_statement = get_create_stmt(fields)) == NULL) {
+		LOGGER_ERROR("Insufficient memory for creating SQL statement");
+		ilog_error = ILOG_ENOMEM;
+		goto err;
+	}
+
+	LOGGER_DEBUG("Creating table with statement: %s", sql_statement);
+	err = sqlite3_exec(db, sql_statement, NULL, NULL, &errmsg);
+	if (err != SQLITE_OK || errmsg != NULL) {
+		LOGGER_ERROR("Failed to execute SQL statement: %s", errmsg);
+		ilog_error = ILOG_EINV;
+		goto err;
+	}
+
+	LOGGER_DEBUG("Field names successfully set");
+	sqlite3_free(errmsg);
+	free(sql_statement);
+	*err_dst = err;
 	return ILOG_ESUCCESS;
+
+err:
+	LOGGER_DEBUG("Failed to set column names for table %s",
+		     ILOG_SQL_TABLENAME);
+	if (errmsg != NULL) {
+		sqlite3_free(errmsg);
+	}
+	if (sql_statement != NULL) {
+		free(sql_statement);
+	}
+	*err_dst = err;
+	return ilog_error;
 }
 
 
@@ -518,6 +592,7 @@ error:
 }
 
 
+#undef STRLEN
 #undef VALLOC
 #undef ALLOC
 
