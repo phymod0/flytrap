@@ -75,8 +75,8 @@ static ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename,
 					int* err_dst);
 
 
-ILogError ilog_create_file(const char* filename, const char* fields[],
-			   size_t n_fields, ILogCtx** ctx)
+ILogError ilog_create_or_load_file(const char* filename, const char* fields[],
+				   size_t n_fields, ILogCtx** ctx)
 {
 	int err = 0;
 	int ilog_error = 0;
@@ -122,7 +122,7 @@ success:
 }
 
 
-ILogError ilog_load_from_file(const char* filename, ILogCtx** ctx)
+ILogError ilog_load_file(const char* filename, ILogCtx** ctx)
 {
 	int err = 0;
 	int ilog_error = 0;

@@ -49,12 +49,12 @@ typedef struct ILog ILog;
  * written to `ctx`. If `ILOG_ESUCCESS` is returned, `ctx` must be freed with
  * `ilog_destroy` once no longer needed. Otherwise `*ctx` will be set to `NULL`.
  * If a valid database file already exists at path `filename` then calling this
- * function will have the same effect of calling `ilog_load_from_file` and the
+ * function will have the same effect of calling `ilog_load_file` and the
  * `fields` and `n_fields` parameters will be ignored. If not ignored, the
  * strings in `fields` will be copied rather than borrowed. Long field names
  * will be truncated to 256 characters in length.
  * @see ilog_destroy
- * @see ilog_load_from_file
+ * @see ilog_load_file
  *
  * @param filename C-string containing the path for the new log file
  * @param fields Array containing desired field names
@@ -62,8 +62,8 @@ typedef struct ILog ILog;
  * @param ctx Destination address to write the new context pointer to
  * @return ILOG_ENOMEM, ILOG_EFILE, ILOG_EINV or ILOG_ESUCCESS
  */
-ILogError ilog_create_file(const char* filename, const char* fields[],
-			   size_t n_fields, ILogCtx** ctx);
+ILogError ilog_create_or_load_file(const char* filename, const char* fields[],
+				   size_t n_fields, ILogCtx** ctx);
 
 /**
  * Loads the log from the file specified in `filename`.
@@ -79,7 +79,7 @@ ILogError ilog_create_file(const char* filename, const char* fields[],
  * @param ctx Destination address to write the new context pointer to
  * @return ILOG_ENOMEM, ILOG_EFILE, ILOG_EINV or ILOG_ESUCCESS
  */
-ILogError ilog_load_from_file(const char* filename, ILogCtx** ctx);
+ILogError ilog_load_file(const char* filename, ILogCtx** ctx);
 
 /**
  * Frees a context.
@@ -103,7 +103,7 @@ void ilog_destroy(ILogCtx* ctx);
  * @see ilog_cursor_step
  * @see ilog_cursor_destroy
  *
- * @param ctx Context created by `ilog_create_file` or `ilog_load_from_file`
+ * @param ctx Context created by `ilog_create_or_load_file` or `ilog_load_file`
  * @param start The log number to start at, 0 denoting the most recent log
  * @param filter Pointer to an ilog filter, or NULL to disable filtering
  * @param cursor Destination address to write the new cursor pointer to
@@ -215,7 +215,7 @@ void ilog_destroy_log(ILog* log);
  * written as values of field names not in `log` but present in the log
  * file.
  *
- * @param ctx Context created by `ilog_create_file` or `ilog_load_from_file`
+ * @param ctx Context created by `ilog_create_or_load_file` or `ilog_load_file`
  * @param log Log data allocated by `ilog_cursor_read` or `ilog_create_log`
  * @return ILOG_ENOMEM, ILOG_EFILE, ILOG_EINV or ILOG_ESUCCESS
  */
