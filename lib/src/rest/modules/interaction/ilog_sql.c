@@ -15,8 +15,6 @@
 #define STRLEN(str) (sizeof(str) - 1)
 
 
-static const char* __last_error = "No error";
-
 typedef enum {
 	ILOG_FLT_BASIC,
 	ILOG_FLT_INVERSION,
@@ -56,13 +54,6 @@ struct ILog {
 };
 
 
-/*
- * TODO(phymod0):
- *    - Bijection between ILogError and error description, remove set_last_error
- */
-
-
-static void set_last_error(const char* error);
 static char* str_dup(const char* str);
 static void* str_dup_void(const void* str);
 static Vector str_vector_from(const char** strings, size_t sz);
@@ -101,7 +92,6 @@ ILogError ilog_create_or_load_file(const char* filename, const char* fields[],
 
 	if ((result->fields = str_vector_from(fields, n_fields)) == NULL) {
 		LOGGER_ERROR("Insufficient memory for copying field names");
-		set_last_error("Out of memory");
 		ilog_error = ILOG_ENOMEM;
 		goto error;
 	}
@@ -119,7 +109,6 @@ error:
 	return ilog_error;
 
 success:
-	set_last_error("Successful");
 	*ctx = result;
 	return ILOG_ESUCCESS;
 }
@@ -145,7 +134,6 @@ ILogError ilog_load_file(const char* filename, ILogCtx** ctx)
 	}
 
 	LOGGER_INFO("Opened database at %s", filename);
-	set_last_error("Successful");
 	*ctx = result;
 	return ILOG_ESUCCESS;
 
@@ -300,10 +288,25 @@ ILogFilter* ilog_filter_inversion(const ILogFilter* filter)
 void ilog_filter_destroy(ILogFilter* filter) { (void)filter; }
 
 
-const char* ilog_last_error_str(void) { return __last_error; }
+const char* ilog_error_description(ILogError err)
+{
+	const char* descriptions[] = {
+	    [ILOG_ESUCCESS] = "Successful",
+	    [ILOG_ENOMEM] = "Out of memory",
+	    [ILOG_ECUREND] = "Operated on an ended cursor",
+	    [ILOG_ELOAD] = "Failed to load/create log file",
+	    [ILOG_EREAD] = "Failed to read from log file",
+	    [ILOG_EUPDATE] = "Failed to update log file",
+	};
 
-
-static void set_last_error(const char* error) { __last_error = error; }
+	if (err < 0 || err >= ILOG_N_ERRORS) {
+		LOGGER_WARN("Received bad error code %d. Valid error codes "
+			    "range from %d to %d inclusive.",
+			    err, 0, ILOG_N_ERRORS - 1);
+		return "Bad error code";
+	}
+	return descriptions[err];
+}
 
 
 static char* str_dup(const char* str)
@@ -355,7 +358,6 @@ static ILogError db_fetch_fields(sqlite3* db, Vector* fields)
 	});
 	if (result == NULL) {
 		LOGGER_ERROR("Insufficient memory for vector creation");
-		set_last_error("Out of memory");
 		ilog_error = ILOG_ENOMEM;
 		goto err;
 	}
@@ -365,7 +367,6 @@ static ILogError db_fetch_fields(sqlite3* db, Vector* fields)
 	if (err != SQLITE_OK || stmt == NULL) {
 		LOGGER_ERROR("Failed to prepare SQL statement: %s",
 			     sqlite3_errmsg(db));
-		set_last_error("Database query failed");
 		ilog_error = ILOG_EREAD;
 		goto err;
 	}
@@ -380,7 +381,6 @@ static ILogError db_fetch_fields(sqlite3* db, Vector* fields)
 		if (step_rc != SQLITE_ROW) {
 			LOGGER_ERROR("Failed to read row from DB: %s",
 				     sqlite3_errmsg(db));
-			set_last_error("Database query failed");
 			sqlite3_finalize(stmt);
 			ilog_error = ILOG_EREAD;
 			goto err;
@@ -388,7 +388,6 @@ static ILogError db_fetch_fields(sqlite3* db, Vector* fields)
 		const unsigned char* column_name = sqlite3_column_text(stmt, 0);
 		if (vector_copy_and_insert(&result, column_name) < 0) {
 			LOGGER_ERROR("Failed to initialize vector");
-			set_last_error("Out of memory");
 			sqlite3_finalize(stmt);
 			ilog_error = ILOG_ENOMEM;
 			goto err;
@@ -400,7 +399,6 @@ static ILogError db_fetch_fields(sqlite3* db, Vector* fields)
 	if (sqlite3_finalize(stmt) != SQLITE_OK) {
 		LOGGER_ERROR("Error on sqlite3_finalize: %s",
 			     sqlite3_errmsg(db));
-		set_last_error("Database query failed");
 		ilog_error = ILOG_EREAD;
 		goto err;
 	}
@@ -464,7 +462,6 @@ static ILogError db_set_fields(sqlite3* db, Vector fields)
 
 	if ((sql_statement = get_create_stmt(fields)) == NULL) {
 		LOGGER_ERROR("Insufficient memory for creating SQL statement");
-		set_last_error("Out of memory");
 		ilog_error = ILOG_ENOMEM;
 		goto err;
 	}
@@ -473,7 +470,6 @@ static ILogError db_set_fields(sqlite3* db, Vector fields)
 	err = sqlite3_exec(db, sql_statement, NULL, NULL, &errmsg);
 	if (err != SQLITE_OK || errmsg != NULL) {
 		LOGGER_ERROR("Failed to execute SQL statement: %s", errmsg);
-		set_last_error("Database transaction failed");
 		ilog_error = ILOG_EUPDATE;
 		goto err;
 	}
@@ -501,7 +497,6 @@ static ILogCtx* ctx_create(void)
 	ILogCtx* ctx = NULL;
 	if (ALLOC(ctx) == NULL) {
 		LOGGER_ERROR("Insufficient memory for context creation");
-		set_last_error("Out of memory");
 		return NULL;
 	}
 	ctx->db = NULL;
@@ -532,7 +527,6 @@ static ILogError try_db_open(ILogCtx* ctx, const char* filename)
 	err = sqlite3_open_v2(filename, &db, SQLITE_OPEN_READWRITE, NULL);
 	if (err != SQLITE_OK || db == NULL) {
 		LOGGER_DEBUG("Failed to open database at %s", filename);
-		set_last_error("Failed to open database");
 		ilog_error = ILOG_ELOAD;
 		goto error;
 	}
@@ -568,7 +562,6 @@ static ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename)
 			      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
 	if (err != SQLITE_OK || db == NULL) {
 		LOGGER_DEBUG("Failed to create database at %s", filename);
-		set_last_error("Failed to create database");
 		ilog_error = ILOG_ENOMEM;
 		goto error;
 	}

@@ -14,8 +14,7 @@
 
 /*
  * TODO(phymod0):
- *    Document error message conditions for each method
- *    Write CSV/JSON exportation methods
+ *    - Write CSV/JSON exportation methods
  */
 
 
@@ -23,9 +22,10 @@ enum ILogError {
 	ILOG_ESUCCESS, /**< Success */
 	ILOG_ENOMEM,   /**< Out of memory */
 	ILOG_ECUREND,  /**< Error due to cursor end */
-	ILOG_ELOAD,    /**< Failed to load a log file */
+	ILOG_ELOAD,    /**< Failed to load/create a log file */
 	ILOG_EREAD,    /**< Failed to read */
 	ILOG_EUPDATE,  /**< Failed to update */
+	ILOG_N_ERRORS, /**< Number of error codes */
 };
 
 struct ILogCtx;
@@ -338,14 +338,16 @@ ILogFilter* ilog_filter_inversion(const ILogFilter* filter);
 void ilog_filter_destroy(ILogFilter* filter);
 
 /**
- * Returns a description of the most recent error.
+ * Returns a description of an error code.
  *
- * Returns a C-string describing the last error encountered by any of the
- * `ilog_*` functions. Returned strings should not be freed.
+ * Returns a C-string describing the error an `ILogError` value represents.
+ * Returned strings must not be freed.
  *
- * @return C-string
+ * @param err `ILogError` error code to translate
+ *
+ * @return C-string representing the error description
  */
-const char* ilog_last_error_str(void);
+const char* ilog_error_description(ILogError err);
 
 
 #endif /* ILOG */
