@@ -23,8 +23,9 @@ enum ILogError {
 	ILOG_ESUCCESS, /**< Success */
 	ILOG_ENOMEM,   /**< Out of memory */
 	ILOG_ECUREND,  /**< Error due to cursor end */
-	ILOG_EFILE,    /**< File error */
-	ILOG_EINV,     /**< Violated invariant */
+	ILOG_ELOAD,    /**< Failed to load a log file */
+	ILOG_EREAD,    /**< Failed to read */
+	ILOG_EUPDATE,  /**< Failed to update */
 };
 
 struct ILogCtx;
@@ -60,7 +61,7 @@ typedef struct ILog ILog;
  * @param fields Array containing desired field names
  * @param n_fields Number of desired field names
  * @param ctx Destination address to write the new context pointer to
- * @return ILOG_ENOMEM, ILOG_EFILE, ILOG_EINV or ILOG_ESUCCESS
+ * @return ILOG_ENOMEM, ILOG_ELOAD, ILOG_EREAD, ILOG_EUPDATE or ILOG_ESUCCESS
  */
 ILogError ilog_create_or_load_file(const char* filename, const char* fields[],
 				   size_t n_fields, ILogCtx** ctx);
@@ -71,13 +72,13 @@ ILogError ilog_create_or_load_file(const char* filename, const char* fields[],
  * The context will be allocated and initialized and it's pointer will be
  * written to `ctx`. If `ILOG_ESUCCESS` is returned, `ctx` must be freed with
  * `ilog_destroy` once no longer needed. Otherwise `*ctx` will be set to `NULL`.
- * `ILOG_EFILE` is returned if the log file at `filename` is absent. `ILOG_EINV`
- * is returned if the log file existed but failed to load.
+ * `ILOG_ELOAD` is returned if the file at `filename` is absent or corrupt.
+ * `ILOG_EREAD` is returned if the log file existed but failed to load.
  * @see ilog_destroy
  *
  * @param filename C-string containing the path to the log file
  * @param ctx Destination address to write the new context pointer to
- * @return ILOG_ENOMEM, ILOG_EFILE, ILOG_EINV or ILOG_ESUCCESS
+ * @return ILOG_ENOMEM, ILOG_ELOAD, ILOG_EREAD or ILOG_ESUCCESS
  */
 ILogError ilog_load_file(const char* filename, ILogCtx** ctx);
 
@@ -107,7 +108,7 @@ void ilog_destroy(ILogCtx* ctx);
  * @param start The log number to start at, 0 denoting the most recent log
  * @param filter Pointer to an ilog filter, or NULL to disable filtering
  * @param cursor Destination address to write the new cursor pointer to
- * @return ILOG_ENOMEM, ILOG_EINV or ILOG_ESUCCESS
+ * @return ILOG_ENOMEM, ILOG_EREAD or ILOG_ESUCCESS
  */
 ILogError ilog_get_logs(ILogCtx* ctx, size_t start, ILogFilter* filter,
 			ILogCursor** cursor);
@@ -130,7 +131,7 @@ void ilog_cursor_destroy(ILogCursor* cursor);
  *
  * @param cursor Pointer to a cursor
  * @param log Destination address to write the new log data to
- * @return ILOG_ENOMEM, ILOG_EFILE, ILOG_ECUREND, ILOG_EINV or ILOG_ESUCCESS
+ * @return ILOG_ENOMEM, ILOG_ECUREND, ILOG_EREAD or ILOG_ESUCCESS
  */
 ILogError ilog_cursor_read(ILogCursor* cursor, ILog** log);
 
@@ -144,7 +145,7 @@ ILogError ilog_cursor_read(ILogCursor* cursor, ILog** log);
  * @see ilog_get_logs
  *
  * @param cursor Pointer to a cursor
- * @return ILOG_ENOMEM, ILOG_EFILE, ILOG_ECUREND, ILOG_EINV or ILOG_ESUCCESS
+ * @return ILOG_ENOMEM, ILOG_ECUREND, ILOG_EREAD or ILOG_ESUCCESS
  */
 ILogError ilog_cursor_step(ILogCursor* cursor);
 
@@ -217,7 +218,7 @@ void ilog_destroy_log(ILog* log);
  *
  * @param ctx Context created by `ilog_create_or_load_file` or `ilog_load_file`
  * @param log Log data allocated by `ilog_cursor_read` or `ilog_create_log`
- * @return ILOG_ENOMEM, ILOG_EFILE, ILOG_EINV or ILOG_ESUCCESS
+ * @return ILOG_ENOMEM, ILOG_EUPDATE or ILOG_ESUCCESS
  */
 ILogError ilog_write_log(ILogCtx* ctx, ILog* log);
 

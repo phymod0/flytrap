@@ -366,7 +366,7 @@ static ILogError db_fetch_fields(sqlite3* db, Vector* fields)
 		LOGGER_ERROR("Failed to prepare SQL statement: %s",
 			     sqlite3_errmsg(db));
 		set_last_error("Database query failed");
-		ilog_error = ILOG_EINV;
+		ilog_error = ILOG_EREAD;
 		goto err;
 	}
 
@@ -382,7 +382,7 @@ static ILogError db_fetch_fields(sqlite3* db, Vector* fields)
 				     sqlite3_errmsg(db));
 			set_last_error("Database query failed");
 			sqlite3_finalize(stmt);
-			ilog_error = ILOG_EINV;
+			ilog_error = ILOG_EREAD;
 			goto err;
 		}
 		const unsigned char* column_name = sqlite3_column_text(stmt, 0);
@@ -401,7 +401,7 @@ static ILogError db_fetch_fields(sqlite3* db, Vector* fields)
 		LOGGER_ERROR("Error on sqlite3_finalize: %s",
 			     sqlite3_errmsg(db));
 		set_last_error("Database query failed");
-		ilog_error = ILOG_EINV;
+		ilog_error = ILOG_EREAD;
 		goto err;
 	}
 
@@ -474,7 +474,7 @@ static ILogError db_set_fields(sqlite3* db, Vector fields)
 	if (err != SQLITE_OK || errmsg != NULL) {
 		LOGGER_ERROR("Failed to execute SQL statement: %s", errmsg);
 		set_last_error("Database transaction failed");
-		ilog_error = ILOG_EINV;
+		ilog_error = ILOG_EUPDATE;
 		goto err;
 	}
 
@@ -533,7 +533,7 @@ static ILogError try_db_open(ILogCtx* ctx, const char* filename)
 	if (err != SQLITE_OK || db == NULL) {
 		LOGGER_DEBUG("Failed to open database at %s", filename);
 		set_last_error("Failed to open database");
-		ilog_error = ILOG_EFILE;
+		ilog_error = ILOG_ELOAD;
 		goto error;
 	}
 
