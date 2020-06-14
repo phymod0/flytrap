@@ -33,15 +33,17 @@ HTTPMethod	rest/rest.h	/^typedef int (*HTTPMethod)(void* server_ctx, struct evht
 HTTPMethods	rest/rest.h	/^} HTTPMethods;$/;"	t	typeref:struct:__anon7bdae7a60108
 ILOG	rest/modules/interaction/ilog.h	/^#define ILOG$/;"	d
 ILOG_ECUREND	rest/modules/interaction/ilog.h	/^	ILOG_ECUREND,  \/**< Error due to cursor end *\/$/;"	e	enum:ILogError
-ILOG_EFILE	rest/modules/interaction/ilog.h	/^	ILOG_EFILE,    \/**< File error *\/$/;"	e	enum:ILogError
-ILOG_EINV	rest/modules/interaction/ilog.h	/^	ILOG_EINV,     \/**< Violated invariant *\/$/;"	e	enum:ILogError
+ILOG_ELOAD	rest/modules/interaction/ilog.h	/^	ILOG_ELOAD,    \/**< Failed to load\/create a log file *\/$/;"	e	enum:ILogError
 ILOG_ENOMEM	rest/modules/interaction/ilog.h	/^	ILOG_ENOMEM,   \/**< Out of memory *\/$/;"	e	enum:ILogError
+ILOG_EREAD	rest/modules/interaction/ilog.h	/^	ILOG_EREAD,    \/**< Failed to read *\/$/;"	e	enum:ILogError
 ILOG_ESUCCESS	rest/modules/interaction/ilog.h	/^	ILOG_ESUCCESS, \/**< Success *\/$/;"	e	enum:ILogError
+ILOG_EUPDATE	rest/modules/interaction/ilog.h	/^	ILOG_EUPDATE,  \/**< Failed to update *\/$/;"	e	enum:ILogError
 ILOG_FLT_BASIC	rest/modules/interaction/ilog_sql.c	/^	ILOG_FLT_BASIC,$/;"	e	enum:__anon747703340103	file:
 ILOG_FLT_CONJUNCTION	rest/modules/interaction/ilog_sql.c	/^	ILOG_FLT_CONJUNCTION,$/;"	e	enum:__anon747703340103	file:
 ILOG_FLT_DISJUNCTION	rest/modules/interaction/ilog_sql.c	/^	ILOG_FLT_DISJUNCTION,$/;"	e	enum:__anon747703340103	file:
 ILOG_FLT_INVERSION	rest/modules/interaction/ilog_sql.c	/^	ILOG_FLT_INVERSION,$/;"	e	enum:__anon747703340103	file:
 ILOG_FWD	rest/modules/interaction/ilog.h	/^#define ILOG_FWD$/;"	d
+ILOG_N_ERRORS	rest/modules/interaction/ilog.h	/^	ILOG_N_ERRORS, \/**< Number of error codes *\/$/;"	e	enum:ILogError
 ILOG_RLT_EQUAL	rest/modules/interaction/ilog_sql.c	/^	ILOG_RLT_EQUAL,$/;"	e	enum:__anon747703340203	file:
 ILOG_RLT_NUMGREATER	rest/modules/interaction/ilog_sql.c	/^	ILOG_RLT_NUMGREATER,$/;"	e	enum:__anon747703340203	file:
 ILOG_RLT_NUMLESS	rest/modules/interaction/ilog_sql.c	/^	ILOG_RLT_NUMLESS,$/;"	e	enum:__anon747703340203	file:
@@ -140,7 +142,6 @@ __anonb9f146730108	adt/vector/vector.c	/^typedef struct {$/;"	s	file:
 __anonb9f146780108	adt/vector/vector.h	/^typedef struct {$/;"	s
 __anoned1784ad0108	rest/server_ctx.h	/^typedef struct {$/;"	s
 __anoned1784ad0208	rest/server_ctx.h	/^typedef struct {$/;"	s
-__last_error	rest/modules/interaction/ilog_sql.c	/^static const char* __last_error = "No error";$/;"	v	typeref:typename:const char *	file:
 add_element	adt/vector/vector.c	/^static inline void add_element(VectorHeader* header, VectorElement element)$/;"	f	typeref:typename:void	file:
 add_strs	adt/trie/trie.c	/^static char* add_strs(const char* str1, const char* str2)$/;"	f	typeref:typename:char *	file:
 add_strs	rest/modules/static_pages/handlers.c	/^static char* add_strs(const char* str1, const char* str2)$/;"	f	typeref:typename:char *	file:
@@ -162,8 +163,8 @@ ctx_create	rest/modules/interaction/ilog_sql.c	/^static ILogCtx* ctx_create(void
 ctx_destroy	rest/modules/interaction/ilog_sql.c	/^static void ctx_destroy(ILogCtx* ctx)$/;"	f	typeref:typename:void	file:
 cursor	rest/modules/interaction/ilog_sql.c	/^	sqlite3_stmt* cursor;$/;"	m	struct:ILogCursor	typeref:typename:sqlite3_stmt *	file:
 db	rest/modules/interaction/ilog_sql.c	/^	sqlite3* db;$/;"	m	struct:ILogCtx	typeref:typename:sqlite3 *	file:
-db_fetch_fields	rest/modules/interaction/ilog_sql.c	/^static ILogError db_fetch_fields(sqlite3* db, Vector* fields, int* err_dst)$/;"	f	typeref:typename:ILogError	file:
-db_set_fields	rest/modules/interaction/ilog_sql.c	/^static ILogError db_set_fields(sqlite3* db, Vector fields, int* err_dst)$/;"	f	typeref:typename:ILogError	file:
+db_fetch_fields	rest/modules/interaction/ilog_sql.c	/^static ILogError db_fetch_fields(sqlite3* db, Vector* fields)$/;"	f	typeref:typename:ILogError	file:
+db_set_fields	rest/modules/interaction/ilog_sql.c	/^static ILogError db_set_fields(sqlite3* db, Vector fields)$/;"	f	typeref:typename:ILogError	file:
 destructor_t	adt/trie/trie.c	/^typedef void (*destructor_t)(void*);$/;"	t	typeref:typename:void (*)(void *)	file:
 docroot	rest/server_ctx.h	/^	char* docroot;$/;"	m	struct:__anoned1784ad0108	typeref:typename:char *
 document_request_cb	rest/rest.c	/^static void document_request_cb(struct evhttp_request* req, const char* path,$/;"	f	typeref:typename:void	file:
@@ -200,8 +201,9 @@ ilog_cursor_destroy	rest/modules/interaction/ilog_sql.c	/^void ilog_cursor_destr
 ilog_cursor_ended	rest/modules/interaction/ilog_sql.c	/^bool ilog_cursor_ended(ILogCursor* cursor)$/;"	f	typeref:typename:bool
 ilog_cursor_read	rest/modules/interaction/ilog_sql.c	/^ILogError ilog_cursor_read(ILogCursor* cursor, ILog** log)$/;"	f	typeref:typename:ILogError
 ilog_cursor_step	rest/modules/interaction/ilog_sql.c	/^ILogError ilog_cursor_step(ILogCursor* cursor)$/;"	f	typeref:typename:ILogError
-ilog_destroy	rest/modules/interaction/ilog_sql.c	/^void ilog_destroy(ILogCtx* ctx) { ctx_destroy(ctx); }$/;"	f	typeref:typename:void
+ilog_destroy	rest/modules/interaction/ilog_sql.c	/^void ilog_destroy(ILogCtx* ctx)$/;"	f	typeref:typename:void
 ilog_destroy_log	rest/modules/interaction/ilog_sql.c	/^void ilog_destroy_log(ILog* log) { (void)log; }$/;"	f	typeref:typename:void
+ilog_error_description	rest/modules/interaction/ilog_sql.c	/^const char* ilog_error_description(ILogError err)$/;"	f	typeref:typename:const char *
 ilog_filter_conjuction	rest/modules/interaction/ilog_sql.c	/^ILogFilter* ilog_filter_conjuction(const ILogFilter* filter_A,$/;"	f	typeref:typename:ILogFilter *
 ilog_filter_destroy	rest/modules/interaction/ilog_sql.c	/^void ilog_filter_destroy(ILogFilter* filter) { (void)filter; }$/;"	f	typeref:typename:void
 ilog_filter_disjuction	rest/modules/interaction/ilog_sql.c	/^ILogFilter* ilog_filter_disjuction(const ILogFilter* filter_A,$/;"	f	typeref:typename:ILogFilter *
@@ -213,7 +215,6 @@ ilog_filter_str_greater	rest/modules/interaction/ilog_sql.c	/^ILogFilter* ilog_f
 ilog_filter_str_less	rest/modules/interaction/ilog_sql.c	/^ILogFilter* ilog_filter_str_less(const char* field_name, const char* value)$/;"	f	typeref:typename:ILogFilter *
 ilog_get_field_value	rest/modules/interaction/ilog_sql.c	/^char* ilog_get_field_value(ILog* log, const char* field_name)$/;"	f	typeref:typename:char *
 ilog_get_logs	rest/modules/interaction/ilog_sql.c	/^ILogError ilog_get_logs(ILogCtx* ctx, size_t start, ILogFilter* filter,$/;"	f	typeref:typename:ILogError
-ilog_last_error_str	rest/modules/interaction/ilog_sql.c	/^const char* ilog_last_error_str(void) { return __last_error; }$/;"	f	typeref:typename:const char *
 ilog_load_file	rest/modules/interaction/ilog_sql.c	/^ILogError ilog_load_file(const char* filename, ILogCtx** ctx)$/;"	f	typeref:typename:ILogError
 ilog_set_field_value	rest/modules/interaction/ilog_sql.c	/^ILogError ilog_set_field_value(ILog* log, const char* field_name,$/;"	f	typeref:typename:ILogError
 ilog_write_log	rest/modules/interaction/ilog_sql.c	/^ILogError ilog_write_log(ILogCtx* ctx, ILog* log)$/;"	f	typeref:typename:ILogError
@@ -284,7 +285,6 @@ segment	adt/trie/trie.c	/^	char* segment;$/;"	m	struct:TrieNode	typeref:typename
 segncpy	adt/trie/trie.c	/^static inline char* segncpy(char* dest, const char* src, size_t n)$/;"	f	typeref:typename:char *	file:
 server_ctx	rest/rest.c	/^	void* server_ctx;$/;"	m	struct:RestCtx	typeref:typename:void *	file:
 server_data	rest/main.c	/^} server_data;$/;"	t	typeref:struct:__anon6fe325280108	file:
-set_last_error	rest/modules/interaction/ilog_sql.c	/^static void set_last_error(const char* error) { __last_error = error; }$/;"	f	typeref:typename:void	file:
 size	adt/vector/vector.c	/^	size_t size;$/;"	m	struct:__anonb9f146730108	typeref:typename:size_t	file:
 stack	adt/trie/stack.c	/^struct stack {$/;"	s	file:
 stack_create	adt/trie/stack.c	/^Stack* stack_create(const struct stack_ops ops)$/;"	f	typeref:typename:Stack *
@@ -328,8 +328,8 @@ trie_iter_step	adt/trie/trie.c	/^static bool trie_iter_step(TrieIterator** iter_
 trie_makeops	adt/trie/trie.h	/^static inline struct TrieOps trie_makeops(void (*dtor)(void*),$/;"	f	typeref:struct:TrieOps
 trie_maxkeylen_added	adt/trie/trie.c	/^size_t trie_maxkeylen_added(Trie* trie) { return trie->max_keylen_added; }$/;"	f	typeref:typename:size_t
 trie_memory_usage	adt/trie/trie.c	/^size_t trie_memory_usage(const Trie* trie)$/;"	f	typeref:typename:size_t
-try_db_create_and_open	rest/modules/interaction/ilog_sql.c	/^static ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename,$/;"	f	typeref:typename:ILogError	file:
-try_db_open	rest/modules/interaction/ilog_sql.c	/^static ILogError try_db_open(ILogCtx* ctx, const char* filename, int* err_dst)$/;"	f	typeref:typename:ILogError	file:
+try_db_create_and_open	rest/modules/interaction/ilog_sql.c	/^static ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename)$/;"	f	typeref:typename:ILogError	file:
+try_db_open	rest/modules/interaction/ilog_sql.c	/^static ILogError try_db_open(ILogCtx* ctx, const char* filename)$/;"	f	typeref:typename:ILogError	file:
 val	adt/string_tree/string_tree.c	/^	void* val;$/;"	m	struct:StringTree	typeref:typename:void *	file:
 val	adt/trie/stack.c	/^	void* val;$/;"	m	struct:stack_elem	typeref:typename:void *	file:
 val_insert	adt/trie/trie.c	/^static void val_insert(TrieNode* node, void* val, destructor_t dtor)$/;"	f	typeref:typename:void	file:
