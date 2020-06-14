@@ -396,10 +396,18 @@ static ILogError db_fetch_fields(sqlite3* db, Vector* fields)
 		LOGGER_DEBUG("Read column name: %s", column_name);
 	}
 
-	LOGGER_DEBUG("Fetched %lu column names", vector_size(result));
+	LOGGER_DEBUG("Finalizing query");
+	if (sqlite3_finalize(stmt) != SQLITE_OK) {
+		LOGGER_ERROR("Error on sqlite3_finalize: %s",
+			     sqlite3_errmsg(db));
+		set_last_error("Database query failed");
+		ilog_error = ILOG_EINV;
+		goto err;
+	}
+
 	*fields = result;
-	err = sqlite3_finalize(stmt);
-	return err == SQLITE_OK ? ILOG_ESUCCESS : ILOG_EINV;
+	LOGGER_DEBUG("Fetched %lu column names", vector_size(result));
+	return ILOG_ESUCCESS;
 
 err:
 	LOGGER_DEBUG("Failed to read column names from table %s",
