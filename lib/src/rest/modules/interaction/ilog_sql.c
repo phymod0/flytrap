@@ -64,6 +64,8 @@ static ILogCtx* ctx_create(void);
 static void ctx_destroy(ILogCtx* ctx);
 static ILogError try_db_open(ILogCtx* ctx, const char* filename);
 static ILogError try_db_create_and_open(ILogCtx* ctx, const char* filename);
+static ILogCursor* create_cursor(ILogCtx* ctx);
+static void destroy_cursor(ILogCursor* cursor);
 
 
 ILogError ilog_create_or_load_file(const char* filename, const char* fields[],
@@ -153,17 +155,35 @@ void ilog_destroy(ILogCtx* ctx)
 
 
 ILogError ilog_get_logs(ILogCtx* ctx, size_t start, ILogFilter* filter,
-			ILogCursor** cursor)
+			ILogCursor** cursor_dst)
 {
-	(void)ctx;
+	ILogError ilog_error = ILOG_ESUCCESS;
+	ILogCursor* cursor = NULL;
+
+	if ((cursor = create_cursor(ctx)) == NULL) {
+		LOGGER_ERROR("Failed to create cursor");
+		ilog_error = ILOG_ENOMEM;
+		goto err;
+	}
+
+	/* TODO(phymod0): Auto-increment ID field */
+	/* TODO(phymod0): Condition tree data structure */
+	/* TODO(phymod0): SQL statement to load data in the cursor */
 	(void)start;
 	(void)filter;
-	(void)cursor;
+
+	LOGGER_INFO("Returning interaction logs in cursor %p", (void*)cursor);
+	*cursor_dst = cursor;
 	return ILOG_ESUCCESS;
+
+err:
+	LOGGER_ERROR("Failed to fetch logs");
+	destroy_cursor(cursor);
+	return ilog_error;
 }
 
 
-void ilog_cursor_destroy(ILogCursor* cursor) { (void)cursor; }
+void ilog_cursor_destroy(ILogCursor* cursor) { destroy_cursor(cursor); }
 
 
 ILogError ilog_cursor_read(ILogCursor* cursor, ILog** log)
@@ -581,6 +601,38 @@ error:
 	sqlite3_close(db);
 	ctx->db = NULL;
 	return ilog_error;
+}
+
+
+static ILogCursor* create_cursor(ILogCtx* ctx)
+{
+	ILogCursor* cursor = NULL;
+
+	if (ALLOC(cursor) == NULL) {
+		LOGGER_ERROR("Out of memory");
+		return NULL;
+	}
+
+	cursor->cursor = NULL;
+	cursor->is_ended = false;
+	cursor->ctx = ctx;
+	return cursor;
+}
+
+
+static void destroy_cursor(ILogCursor* cursor)
+{
+	if (cursor == NULL) {
+		return;
+	}
+
+	sqlite3_stmt* stmt = cursor->cursor;
+	if (stmt != NULL && sqlite3_finalize(stmt) != SQLITE_OK) {
+		const char* err = cursor->ctx ? sqlite3_errmsg(cursor->ctx->db)
+					      : "Unknown failure";
+		LOGGER_WARN("sqlite3_finalize failed: %s", err);
+	}
+	free(cursor);
 }
 
 

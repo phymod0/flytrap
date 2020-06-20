@@ -111,7 +111,7 @@ void ilog_destroy(ILogCtx* ctx);
  * @return ILOG_ENOMEM, ILOG_EREAD or ILOG_ESUCCESS
  */
 ILogError ilog_get_logs(ILogCtx* ctx, size_t start, ILogFilter* filter,
-			ILogCursor** cursor);
+			ILogCursor** cursor_dst);
 
 /**
  * Frees a cursor.
