@@ -11,26 +11,37 @@
 #include <stddef.h>
 
 
+/** Vector element type */
 typedef void* VectorElement;
+
+/** Constant vector element type */
 typedef const void* ConstVectorElement;
+
+/** Main vector type */
 typedef VectorElement* Vector;
 
 /** Operations on vector elements */
 typedef struct {
-	/** Destructor for the object pointed to by `E`. */
+
+	/** Destructor for the object pointed to by `E` */
 	void (*dtor)(VectorElement E);
-	/** Display the object pointed to by `E`. */
-	void (*print)(VectorElement E);
+
+	/** Display the object pointed to by `E` */
+	void (*print)(ConstVectorElement E);
+
 	/**
 	 * Return a pointer to a copy of the object pointed to by `E`.
 	 *
 	 * `NULL` must only be returned to indicate a memory allocation failure.
 	 */
 	VectorElement (*copy)(ConstVectorElement E);
-	/** Return non-zero iff `*A == *B`. */
+
+	/** Return non-zero iff `*A == *B` */
 	int (*equal)(VectorElement A, VectorElement B);
-	/** Return `< 0` if `*A < *B`, `> 0` if `*A > *B`, and `0` otherwise. */
+
+	/** Return `< 0` if `*A < *B`, `> 0` if `*A > *B`, and `0` otherwise */
 	int (*order)(VectorElement A, VectorElement B);
+
 } VectorElementOps;
 
 
@@ -46,7 +57,7 @@ typedef struct {
  * accessed as if it were an array of `void` pointers to vector elements.
  *
  * @param ops Pointer to operations
- * @returns Pointer to the beginning of an empty vector or NULL if out of memory
+ * @return Pointer to the beginning of an empty vector or NULL if out of memory
  */
 Vector vector_create(const VectorElementOps* ops);
 
@@ -76,7 +87,7 @@ void vector_destroy(Vector vector);
 int vector_insert(Vector* vector_ptr, VectorElement element);
 
 /**
- * Insert an element into a vector.
+ * Copy and insert an element into a vector.
  *
  * This function takes the address of a vector pointer as the new vector may be
  * relocated. If successful, a pointer to a copy of the underlying object of
