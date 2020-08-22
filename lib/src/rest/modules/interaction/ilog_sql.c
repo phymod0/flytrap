@@ -172,7 +172,7 @@ ILogError ilog_get_logs(ILogCtx* ctx, size_t start, ILogFilter* filter,
 	(void)start;
 	(void)filter;
 
-	LOGGER_INFO("Returning interaction logs in cursor %p", (void*)cursor);
+	LOGGER_DEBUG("Returning interaction logs in cursor %p", (void*)cursor);
 	*cursor_dst = cursor;
 	return ILOG_ESUCCESS;
 
