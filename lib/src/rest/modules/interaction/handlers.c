@@ -11,6 +11,7 @@
  *	- File hierarchy for handlers?
  *	- Function to return JSON data from an evhttp_request struct
  *	- Describe JSON parameters in each handler's POST data
+ *	- Parameterize routes to avoid including subtype information in JSON
  */
 
 
