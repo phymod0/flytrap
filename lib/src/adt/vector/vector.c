@@ -129,7 +129,7 @@ void vector_print(Vector vector)
 	size_t capacity = header->capacity;
 	const char* header_fmt = "Size: %lu\n"
 				 "Capacity: %lu\n";
-	void (*print)(VectorElement element) = header->ops->print;
+	void (*print)(ConstVectorElement element) = header->ops->print;
 
 	printf(header_fmt, size, capacity);
 
