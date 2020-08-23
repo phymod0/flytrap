@@ -6,7 +6,7 @@ add_library(flytrap
     src/rest/register_modules.c
     src/rest/modules/static_pages/handlers.c
     src/rest/modules/interaction/handlers.c
-    src/rest/modules/interaction/ilog_sql.c
+    src/rest/modules/interaction/ilog.c
     src/rest/modules/captive_portal/handlers.c
     src/rest/rest.c
     src/adt/trie/stack.c
@@ -14,6 +14,7 @@ add_library(flytrap
     src/adt/string_tree/string_tree.c
     src/adt/vector/vector.c
     src/utils/logger.c
+    src/utils/common.c
 )
 
 add_custom_target(test
