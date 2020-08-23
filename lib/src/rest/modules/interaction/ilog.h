@@ -208,6 +208,8 @@ int ilog_get_subtype(ILog* log);
  */
 const char* ilog_get_json_data(ILog* log);
 
+/* TODO: Redesign filtering interface */
+
 /**
  * Creates an equality filter.
  *

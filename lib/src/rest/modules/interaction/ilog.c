@@ -1,20 +1,20 @@
-#ifdef ILOG_SQL
-
-
 #include "ilog.h"
 #include "../../../config.h"
+#include "../../../utils/common.h"
 #include "../../../utils/logger.h"
 #include "../../../utils/macros.h"
 
 #include <stdlib.h>
 #include <string.h>
-/* TODO: Remove useless includes/static functions */
-/* TODO: Add missing static function declarations */
-/* TODO: Move helper functions to utils/common.h */
 
-#define ALLOC(x) ((x) = malloc(sizeof *(x)))
-#define VALLOC(x, n) ((x) = malloc((sizeof *(x)) * (n)))
-#define STRLEN(str) (sizeof(str) - 1)
+
+/*
+ * XXX: Filtering is not functional (disabled by default)
+ *
+ * TODO(phymod0):
+ *	- Finger tables for linearithmic cursor position setting
+ *	- Redesign and implement filtering!
+ */
 
 
 typedef enum {
@@ -51,7 +51,7 @@ struct ILogCursor {
 };
 
 struct ILog {
-	ILog* next; /* TODO: Finger tables for linearithmic cursor generation */
+	ILog* next;
 	ILogID id;
 	time_t timestamp;
 	unsigned char mac_addr[MAC_ADDRLEN];
@@ -60,21 +60,24 @@ struct ILog {
 };
 
 
-static void safe_free(void* mem);
-static char* str_dup(const char* str);
 static ILog* ilog_create(const unsigned char* mac_addr, int type, int subtype,
 			 const char* json_data);
 static void ilog_list_prepend(ILogList* ilog_list, ILog* ilog);
 static void ilog_destroy(ILog* ilog);
-static ILogCursor* create_cursor(ILogList* ilog_list, ILogFilter* filter);
-static void destroy_cursor(ILogCursor* cursor);
+static bool filter_satisfied(ILogFilter* filter, ILog* ilog);
+static ILogCursor* cursor_create(ILogList* ilog_list, ILogFilter* filter);
+static void cursor_destroy(ILogCursor* cursor);
+static ILog* next_or_null(ILog* ilog);
+static void cursor_increment_position(ILogCursor* cursor);
+static void cursor_set_position(ILogCursor* cursor, ILogID to);
+static void cursor_advance(ILogCursor* cursor);
 
 
 ILogError ilog_list_create(ILogList** ilog_list)
 {
 	ILogList* result = NULL;
 
-	if (ALLOC(result) == NULL) {
+	if (FT_ALLOC(result) == NULL) {
 		goto oom;
 	}
 	result->head = result->last_saved = NULL;
@@ -121,13 +124,13 @@ ILogError ilog_get_logs(ILogList* ilog_list, ILogID start, ILogFilter* filter,
 			ILogCursor** cursor_dst)
 {
 	ILogCursor* cursor = NULL;
-	if ((cursor = create_cursor(ilog_list, filter)) == NULL) {
+	if ((cursor = cursor_create(ilog_list, filter)) == NULL) {
 		LOGGER_ERROR("Out of memory");
-		destroy_cursor(cursor);
+		cursor_destroy(cursor);
 		return ILOG_ENOMEM;
 	}
-	cursor_set_position(cursor, start); /* TODO: Implement */
-	cursor_advance(cursor);             /* TODO: Implement */
+	cursor_set_position(cursor, start);
+	cursor_advance(cursor);
 
 	LOGGER_DEBUG("Returning interaction logs in cursor %p", (void*)cursor);
 	*cursor_dst = cursor;
@@ -135,7 +138,7 @@ ILogError ilog_get_logs(ILogList* ilog_list, ILogID start, ILogFilter* filter,
 }
 
 
-void ilog_cursor_destroy(ILogCursor* cursor) { destroy_cursor(cursor); }
+void ilog_cursor_destroy(ILogCursor* cursor) { cursor_destroy(cursor); }
 
 
 const ILog* ilog_cursor_read(ILogCursor* cursor)
@@ -146,8 +149,8 @@ const ILog* ilog_cursor_read(ILogCursor* cursor)
 
 void ilog_cursor_step(ILogCursor* cursor)
 {
-	cursor_increment_position(cursor); /* TODO: Implement */
-	cursor_advance(cursor);            /* TODO: Implement */
+	cursor_increment_position(cursor);
+	cursor_advance(cursor);
 }
 
 
@@ -177,6 +180,7 @@ const char* ilog_get_json_data(ILog* log) { return log->json_data; }
 
 ILogFilter* ilog_filter_equal(const char* field_name, const char* value)
 {
+	LOGGER_WARN("Not implemented");
 	FT_UNUSED(field_name);
 	FT_UNUSED(value);
 	return NULL;
@@ -185,6 +189,7 @@ ILogFilter* ilog_filter_equal(const char* field_name, const char* value)
 
 ILogFilter* ilog_filter_str_greater(const char* field_name, const char* value)
 {
+	LOGGER_WARN("Not implemented");
 	FT_UNUSED(field_name);
 	FT_UNUSED(value);
 	return NULL;
@@ -193,6 +198,7 @@ ILogFilter* ilog_filter_str_greater(const char* field_name, const char* value)
 
 ILogFilter* ilog_filter_str_less(const char* field_name, const char* value)
 {
+	LOGGER_WARN("Not implemented");
 	FT_UNUSED(field_name);
 	FT_UNUSED(value);
 	return NULL;
@@ -201,6 +207,7 @@ ILogFilter* ilog_filter_str_less(const char* field_name, const char* value)
 
 ILogFilter* ilog_filter_int_greater(const char* field_name, long long int value)
 {
+	LOGGER_WARN("Not implemented");
 	FT_UNUSED(field_name);
 	FT_UNUSED(value);
 	return NULL;
@@ -209,6 +216,7 @@ ILogFilter* ilog_filter_int_greater(const char* field_name, long long int value)
 
 ILogFilter* ilog_filter_int_less(const char* field_name, long long int value)
 {
+	LOGGER_WARN("Not implemented");
 	FT_UNUSED(field_name);
 	FT_UNUSED(value);
 	return NULL;
@@ -218,6 +226,7 @@ ILogFilter* ilog_filter_int_less(const char* field_name, long long int value)
 ILogFilter* ilog_filter_conjuction(const ILogFilter* filter_A,
 				   const ILogFilter* filter_B)
 {
+	LOGGER_WARN("Not implemented");
 	FT_UNUSED(filter_A);
 	FT_UNUSED(filter_B);
 	return NULL;
@@ -227,6 +236,7 @@ ILogFilter* ilog_filter_conjuction(const ILogFilter* filter_A,
 ILogFilter* ilog_filter_disjuction(const ILogFilter* filter_A,
 				   const ILogFilter* filter_B)
 {
+	LOGGER_WARN("Not implemented");
 	FT_UNUSED(filter_A);
 	FT_UNUSED(filter_B);
 	return NULL;
@@ -235,12 +245,17 @@ ILogFilter* ilog_filter_disjuction(const ILogFilter* filter_A,
 
 ILogFilter* ilog_filter_inversion(const ILogFilter* filter)
 {
+	LOGGER_WARN("Not implemented");
 	FT_UNUSED(filter);
 	return NULL;
 }
 
 
-void ilog_filter_destroy(ILogFilter* filter) { FT_UNUSED(filter); }
+void ilog_filter_destroy(ILogFilter* filter)
+{
+	LOGGER_WARN("Not implemented");
+	FT_UNUSED(filter);
+}
 
 
 const char* ilog_error_description(ILogError err)
@@ -263,33 +278,13 @@ const char* ilog_error_description(ILogError err)
 	return descriptions[err];
 }
 
-
-static void safe_free(void* mem)
-{
-	if (mem) {
-		free(mem);
-	}
-}
-
-
-static char* str_dup(const char* str)
-{
-	size_t len = strlen(str);
-	char* result = NULL;
-	if (VALLOC(result, len + 1)) {
-		memcpy(result, str, len + 1);
-	}
-	return result;
-}
-
-
 static ILog* ilog_create(const unsigned char* mac_addr, int type, int subtype,
 			 const char* json_data)
 {
 	struct ILog* result = NULL;
 	char* json_data_copy = NULL;
 
-	if (ALLOC(result) == NULL ||
+	if (FT_ALLOC(result) == NULL ||
 	    (json_data != NULL &&
 	     (json_data_copy = str_dup(json_data)) == NULL)) {
 		LOGGER_ERROR("Out of memory");
@@ -329,11 +324,20 @@ static void ilog_destroy(ILog* ilog)
 }
 
 
-static ILogCursor* create_cursor(ILogList* ilog_list, ILogFilter* filter)
+static bool filter_satisfied(ILogFilter* filter, ILog* ilog)
+{
+	LOGGER_WARN("Not implemented");
+	FT_UNUSED(filter);
+	FT_UNUSED(ilog);
+	return true;
+}
+
+
+static ILogCursor* cursor_create(ILogList* ilog_list, ILogFilter* filter)
 {
 	ILogCursor* cursor = NULL;
 
-	if (ALLOC(cursor) == NULL) {
+	if (FT_ALLOC(cursor) == NULL) {
 		LOGGER_ERROR("Out of memory");
 		return NULL;
 	}
@@ -345,12 +349,36 @@ static ILogCursor* create_cursor(ILogList* ilog_list, ILogFilter* filter)
 }
 
 
-static void destroy_cursor(ILogCursor* cursor) { safe_free(cursor); }
+static void cursor_destroy(ILogCursor* cursor) { safe_free(cursor); }
 
 
-#undef STRLEN
-#undef VALLOC
-#undef ALLOC
+static ILog* next_or_null(ILog* ilog) { return ilog ? ilog->next : NULL; }
 
 
-#endif /* ILOG_SQL */
+static void cursor_increment_position(ILogCursor* cursor)
+{
+	cursor->current_ilog = next_or_null(cursor->current_ilog);
+}
+
+
+static void cursor_set_position(ILogCursor* cursor, ILogID to)
+{
+	ILog* head = cursor->ilog_list->head;
+	ILog* current = cursor->current_ilog;
+	ILog* ilog = (current && current->id >= to) ? current : head;
+	while (ilog && ilog->id != to) {
+		ilog = next_or_null(ilog);
+	}
+	cursor->current_ilog = ilog;
+}
+
+
+static void cursor_advance(ILogCursor* cursor)
+{
+	ILog* ilog = cursor->current_ilog;
+	ILogFilter* filter = cursor->filter;
+	while (ilog && !filter_satisfied(filter, ilog)) {
+		ilog = next_or_null(ilog);
+	}
+	cursor->current_ilog = ilog;
+}
