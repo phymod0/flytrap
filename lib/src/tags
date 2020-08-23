@@ -69,7 +69,7 @@ ILogError	rest/modules/interaction/ilog.h	/^typedef enum ILogError ILogError;$/;
 ILogFilter	rest/modules/interaction/ilog.c	/^struct ILogFilter {$/;"	s	file:
 ILogFilter	rest/modules/interaction/ilog.h	/^typedef struct ILogFilter ILogFilter;$/;"	t	typeref:struct:ILogFilter
 ILogFilterType	rest/modules/interaction/ilog.c	/^} ILogFilterType;$/;"	t	typeref:enum:__anon5a67d1450103	file:
-ILogID	rest/modules/interaction/ilog.h	/^typedef unsigned int ILogID;$/;"	t	typeref:typename:unsigned int
+ILogID	rest/modules/interaction/ilog.h	/^typedef int ILogID;$/;"	t	typeref:typename:int
 ILogList	rest/modules/interaction/ilog.c	/^struct ILogList {$/;"	s	file:
 ILogList	rest/modules/interaction/ilog.h	/^typedef struct ILogList ILogList;$/;"	t	typeref:struct:ILogList
 ILogRelationType	rest/modules/interaction/ilog.c	/^} ILogRelationType;$/;"	t	typeref:enum:__anon5a67d1450203	file:
