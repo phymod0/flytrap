@@ -10,11 +10,12 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <time.h>
 
 
 /*
  * TODO(phymod0):
- *    - Write CSV/JSON exportation methods
+ *    - Implement CSV/JSON/SQL/bin partial saving, full saving and loading
  */
 
 
@@ -28,15 +29,16 @@ enum ILogError {
 	ILOG_N_ERRORS, /**< Number of error codes */
 };
 
-struct ILogCtx;
+struct ILogList;
 struct ILogFilter;
 struct ILogCursor;
 struct ILog;
 
 #ifndef ILOG_FWD
 #define ILOG_FWD
+typedef unsigned int ILogID;
 typedef enum ILogError ILogError;
-typedef struct ILogCtx ILogCtx;
+typedef struct ILogList ILogList;
 typedef struct ILogFilter ILogFilter;
 typedef struct ILogCursor ILogCursor;
 typedef struct ILog ILog;
@@ -44,73 +46,65 @@ typedef struct ILog ILog;
 
 
 /**
- * Creates and loads an empty log at the path specified in `filename`.
+ * Creates an empty log list.
  *
- * The context will be allocated and initialized and it's pointer will be
- * written to `ctx`. If `ILOG_ESUCCESS` is returned, `ctx` must be freed with
- * `ilog_destroy` once no longer needed. Otherwise `*ctx` will be set to `NULL`.
- * If a valid database file already exists at path `filename` then calling this
- * function will have the same effect of calling `ilog_load_file` and the
- * `fields` and `n_fields` parameters will be ignored. If not ignored, the
- * strings in `fields` will be copied rather than borrowed. Long field names
- * will be truncated to 256 characters in length.
- * @see ilog_destroy
- * @see ilog_load_file
+ * If the list is successfully allocated and initialized, it's pointer will be
+ * written at `ilog_list` which must be freed with `ilog_list_destroy` once no
+ * longer needed and `ILOG_ESUCCESS` will be returned. Otherwise `*ilog_list`
+ * will be set to `NULL` and the function will return `ILOG_ENOMEM`.
+ * @see ilog_list_destroy
  *
- * @param filename C-string containing the path for the new log file
- * @param fields Array containing desired field names
- * @param n_fields Number of desired field names
- * @param ctx Destination address to write the new context pointer to
- * @return ILOG_ENOMEM, ILOG_ELOAD, ILOG_EREAD, ILOG_EUPDATE or ILOG_ESUCCESS
+ * @param ilog_list Destination address to write the new ilog list pointer to
+ * @return `ILOG_ENOMEM` or `ILOG_ESUCCESS`
  */
-ILogError ilog_create_or_load_file(const char* filename, const char* fields[],
-				   size_t n_fields, ILogCtx** ctx);
+ILogError ilog_list_create(ILogList** ilog_list);
 
 /**
- * Loads the log from the file specified in `filename`.
+ * Frees a ilog list.
  *
- * The context will be allocated and initialized and it's pointer will be
- * written to `ctx`. If `ILOG_ESUCCESS` is returned, `ctx` must be freed with
- * `ilog_destroy` once no longer needed. Otherwise `*ctx` will be set to `NULL`.
- * `ILOG_ELOAD` is returned if the file at `filename` is absent or corrupt.
- * `ILOG_EREAD` is returned if the log file existed but failed to load.
- * @see ilog_destroy
+ * Frees the allocated memory for an ilog list. Calling this function on `NULL`
+ * is a harmless no-op.
  *
- * @param filename C-string containing the path to the log file
- * @param ctx Destination address to write the new context pointer to
- * @return ILOG_ENOMEM, ILOG_ELOAD, ILOG_EREAD or ILOG_ESUCCESS
+ * @param ilog_list List pointer created by `ilog_list_create` or `NULL`
  */
-ILogError ilog_load_file(const char* filename, ILogCtx** ctx);
+void ilog_list_destroy(ILogList* ilog_list);
 
 /**
- * Frees a context.
+ * Inserts a record into an ilog list.
  *
- * Frees the allocated memory and closes all files owned by `ctx`.
- * Calling this function on `NULL` is a harmless no-op.
+ * The timestamp of the ilog list is roughly set to the time of insertion.
+ * `ILOG_ENOMEM` is returned if memory is insufficient for the insertion,
+ * otherwise `ILOG_ESUCCESS` is returned. `json_data` and `mac_addr` will be
+ * copied rather than borrowed. `json_data` may be `NULL` if not applicable.
  *
- * @param ctx Context created by `ilog_{create|load_from}_file` or `NULL`
+ * @param ilog_list List pointer created by `ilog_list_create`
+ * @param mac_addr MAC address of the device this log is recorded from
+ * @param type Interaction type
+ * @param subtype Subtype of the interaction type
+ * @param json_data `NULL` or a C-string containing the log's JSON data
  */
-void ilog_destroy(ILogCtx* ctx);
+ILogError ilog_list_insert(ILogList* ilog_list, const unsigned char* mac_addr,
+			   int type, int subtype, const char* json_data);
 
 /**
  * Creates a cursor for retrieving specific logs.
  *
- * Generates a cursor to iterate over logs in order of increasing age,
- * starting from the `start`th oldest log and satisfying the constraints
- * imposed by `filter`. If `ILOG_ESUCCESS` is returned, `cursor` must be
- * freed with `ilog_cursor_destroy` once no longer needed. Otherwise,
- * `cursor` will remain unchanged.
+ * Generates a cursor to iterate over logs in order of increasing age from or
+ * after the log with ID `start` satisfying `filter`. If `ILOG_ESUCCESS` is
+ * returned, `cursor` must be freed with `ilog_cursor_destroy` once no longer
+ * needed. Otherwise, `ILOG_ENOMEM` will be returned and `cursor` will remain
+ * unchanged.
  * @see ilog_cursor_read
  * @see ilog_cursor_step
  * @see ilog_cursor_destroy
  *
- * @param ctx Context created by `ilog_create_or_load_file` or `ilog_load_file`
- * @param start The log number to start at, 0 denoting the most recent log
- * @param filter Pointer to an ilog filter, or NULL to disable filtering
+ * @param ilog_list List pointer created by `ilog_list_create`
+ * @param start The log number to start at, `0` denoting the youngest log
+ * @param filter Pointer to an ilog filter, or `NULL` to disable filtering
  * @param cursor Destination address to write the new cursor pointer to
- * @return ILOG_ENOMEM, ILOG_EREAD or ILOG_ESUCCESS
+ * @return `ILOG_ENOMEM` or `ILOG_ESUCCESS`
  */
-ILogError ilog_get_logs(ILogCtx* ctx, size_t start, ILogFilter* filter,
+ILogError ilog_get_logs(ILogList* ilog_list, ILogID start, ILogFilter* filter,
 			ILogCursor** cursor_dst);
 
 /**
@@ -123,31 +117,29 @@ void ilog_cursor_destroy(ILogCursor* cursor);
 /**
  * Reads the log pointed to by a cursor.
  *
- * If `ILOG_ESUCCESS` is returned, `log` must be freed with `ilog_destroy_log`
- * once no longer needed. Otherwise, `log` will remain unchanged. `ILOG_ECUREND`
- * is returned if the cursor was flagged as ended by `ilog_cursor_step`.
- * @see ilog_destroy_log
+ * `NULL` is returned if the cursor was flagged as ended during a call to
+ * `ilog_cursor_step` or at initialization. Otherwise, a pointer to a borrowed
+ * ilog object is written at `log` which must neither be freed nor modified.
+ * The behavior of reading `**log` after freeing the parent list is undefined.
  * @see ilog_cursor_step
  *
- * @param cursor Pointer to a cursor
- * @param log Destination address to write the new log data to
- * @return ILOG_ENOMEM, ILOG_ECUREND, ILOG_EREAD or ILOG_ESUCCESS
+ * @param cursor Pointer to an ilog cursor
+ * @return Borrowed pointer to an ilog object
  */
-ILogError ilog_cursor_read(ILogCursor* cursor, ILog** log);
+const ILog* ilog_cursor_read(ILogCursor* cursor);
 
 /**
  * Advances a cursor to the next relevant log.
  *
- * Updates `cursor` to point to the log immediately older that satisfies the
+ * Updates `cursor` to point to the immediately older log that satisfies the
  * filters applied in `ilog_get_logs`. If no such log exists, the cursor is
- * flagged as ended without any other modifications. `ILOG_ECUREND` is returned
- * if the cursor is or was already flagged as ended.
+ * flagged as ended without any other modifications. Calling this function on an
+ * ended cursor is a harmless no-op.
  * @see ilog_get_logs
  *
- * @param cursor Pointer to a cursor
- * @return ILOG_ENOMEM, ILOG_ECUREND, ILOG_EREAD or ILOG_ESUCCESS
+ * @param cursor Pointer to an ilog cursor
  */
-ILogError ilog_cursor_step(ILogCursor* cursor);
+void ilog_cursor_step(ILogCursor* cursor);
 
 /**
  * Checks whether a cursor has been flagged as ended.
@@ -160,67 +152,61 @@ ILogError ilog_cursor_step(ILogCursor* cursor);
 bool ilog_cursor_ended(ILogCursor* cursor);
 
 /**
- * Creates a blank log object.
+ * Gets the timestamp value from a log.
  *
- * Use `ilog_set_field_value` to initialize.
- * @see ilog_set_field_value
- *
- * @return Pointer to a newly allocated log object or `NULL` if out of memory
+ * @param log Log data provided by `ilog_cursor_read`
+ * @return Unix timestamp of the log as a `time_t` value
  */
-ILog* ilog_create_log();
+time_t ilog_get_timestamp(ILog* log);
 
 /**
- * Gets a field value from a log.
+ * Gets the ID from a log.
  *
- * The return value will point to borrowed memory. The behavior may be
- * undefined if this pointer is freed, if the underlying data is
- * modified or if the underlying data is accessed after modifying the
- * log. `NULL` is returned if the required field name does not exist in
- * the log.
- *
- * @param log Log data allocated by `ilog_cursor_read` or `ilog_create_log`
- * @param field_name Field name corresponding to the required value
- * @return Pointer to the borrowed value string
+ * @param log Log data provided by `ilog_cursor_read`
+ * @return ID of the log
  */
-char* ilog_get_field_value(ILog* log, const char* field_name);
+ILogID ilog_get_id(ILog* log);
 
 /**
- * Sets a field value on a log.
+ * Gets the MAC address from a log.
  *
- * The data pointed to by `value` will be copied rather than borrowed.
+ * A pointer to borrowed memory is returned which must not be freed manually.
+ * The behavior of dereferencing the returned pointer after destroying the
+ * parent log list is undefined.
  *
- * @param log Log data allocated by `ilog_cursor_read` or `ilog_create_log`
- * @param field_name Field name corresponding to the required value
- * @param value C-string containing the value to copy from
- * @return ILOG_ENOMEM or ILOG_ESUCCESS
+ * @param log Log data provided by `ilog_cursor_read`
+ * @return 6-byte `unsigned char` array representing the MAC address
  */
-ILogError ilog_set_field_value(ILog* log, const char* field_name,
-			       const char* value);
+const unsigned char* ilog_get_mac_addr(ILog* log);
 
 /**
- * Free allocated log data.
+ * Gets the interaction type from a log.
  *
- * Successful calls will render the data returned by `ilog_get_field_value`
- * invalid.
- * @see ilog_get_field_value
- *
- * @param log Log data allocated by `ilog_cursor_read` or `ilog_create_log`
+ * @param log Log data provided by `ilog_cursor_read`
+ * @return Integer representing the interaction type of the log
  */
-void ilog_destroy_log(ILog* log);
+int ilog_get_type(ILog* log);
 
 /**
- * Writes a log to the file handled by ctx.
+ * Gets the interaction subtype from a log.
  *
- * Field names that are not present in both `log` and the log file
- * handled by `ctx` will not be dealt with. Empty strings will be
- * written as values of field names not in `log` but present in the log
- * file.
- *
- * @param ctx Context created by `ilog_create_or_load_file` or `ilog_load_file`
- * @param log Log data allocated by `ilog_cursor_read` or `ilog_create_log`
- * @return ILOG_ENOMEM, ILOG_EUPDATE or ILOG_ESUCCESS
+ * @param log Log data provided by `ilog_cursor_read`
+ * @return Integer representing the interaction subtype of the log
  */
-ILogError ilog_write_log(ILogCtx* ctx, ILog* log);
+int ilog_get_subtype(ILog* log);
+
+/**
+ * Gets the JSON data from a log.
+ *
+ * `NULL` is returned if the JSON provided in `ilog_list_insert` was `NULL`.
+ * Otherwise a pointer to borrowed memory is returned which must not be freed
+ * manually. The behavior of dereferencing the returned pointer after destroying
+ * the parent log list is undefined.
+ *
+ * @param log Log data provided by `ilog_cursor_read`
+ * @return `NULL` or the same C-string pointer provided in `ilog_list_insert`
+ */
+const char* ilog_get_json_data(ILog* log);
 
 /**
  * Creates an equality filter.
