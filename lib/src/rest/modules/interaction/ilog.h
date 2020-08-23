@@ -36,7 +36,7 @@ struct ILog;
 
 #ifndef ILOG_FWD
 #define ILOG_FWD
-typedef unsigned int ILogID;
+typedef int ILogID;
 typedef enum ILogError ILogError;
 typedef struct ILogList ILogList;
 typedef struct ILogFilter ILogFilter;
@@ -93,7 +93,7 @@ ILogError ilog_list_insert(ILogList* ilog_list, const unsigned char* mac_addr,
  * after the log with ID `start` satisfying `filter`. If `ILOG_ESUCCESS` is
  * returned, `cursor` must be freed with `ilog_cursor_destroy` once no longer
  * needed. Otherwise, `ILOG_ENOMEM` will be returned and `cursor` will remain
- * unchanged.
+ * unchanged. Passing `-1` in `start` will start the cursor at the youngest log.
  * @see ilog_cursor_read
  * @see ilog_cursor_step
  * @see ilog_cursor_destroy

@@ -364,6 +364,10 @@ static void cursor_increment_position(ILogCursor* cursor)
 static void cursor_set_position(ILogCursor* cursor, ILogID to)
 {
 	ILog* head = cursor->ilog_list->head;
+	if (to == -1) {
+		cursor->current_ilog = head;
+		return;
+	}
 	ILog* current = cursor->current_ilog;
 	ILog* ilog = (current && current->id >= to) ? current : head;
 	while (ilog && ilog->id != to) {
