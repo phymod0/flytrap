@@ -6,8 +6,12 @@
 #include <event2/http.h>
 
 
-/* TODO: File hierarchy for handlers? */
-/* TODO: Function to return JSON data from an evhttp_request struct */
+/*
+ * TODO(phymod0):
+ *	- File hierarchy for handlers?
+ *	- Function to return JSON data from an evhttp_request struct
+ *	- Describe JSON parameters in each handler's POST data
+ */
 
 
 /* Handlers for all interaction types */
@@ -167,7 +171,6 @@ static int form_submission_handler(void* server_ctx, struct evhttp_request* req,
 #define INTERACTION_ROUTE_PREFIX "/interaction"
 #endif /* INTERACTION_ROUTE_PREFIX */
 
-/* TODO: Describe JSON parameters in each handler's POST data */
 const HTTPHandler interaction_handlers[] = {
     /**
      * Landed for the first time in the session
