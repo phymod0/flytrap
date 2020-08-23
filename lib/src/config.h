@@ -26,6 +26,9 @@
 #endif /* LOGGING_ENABLE */
 
 
+#define MAC_ADDRLEN 6
+
+
 #define MAX_FIELDNAME_STRLEN 256
 
 #ifdef ILOG_SQL
